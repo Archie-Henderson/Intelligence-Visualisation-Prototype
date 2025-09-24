@@ -1,7 +1,4 @@
-# 2025 Group SH12 Main Project
-
-# 2020 TEAM cs39 Project
-
+# 2025 Group SH12 Project
 
 ## Getting started
 
