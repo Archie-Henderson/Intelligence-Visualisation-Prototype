@@ -8,7 +8,7 @@ def upload_file(request):
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             file = form.cleaned_data['file']
-            #TODO: Add function to process data with SpaCy
+            #process_file(file)
             #TODO: Add redirect to upload form
 
     else:
