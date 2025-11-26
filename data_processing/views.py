@@ -1,6 +1,7 @@
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from .forms import UploadFileForm
+from .text_analysis import process_file
 
 # Create your views here.
 def upload_file(request):
@@ -8,7 +9,7 @@ def upload_file(request):
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             file = form.cleaned_data['file']
-            #process_file(file)
+            process_file(file)
             #TODO: Add redirect to upload form
 
     else:
