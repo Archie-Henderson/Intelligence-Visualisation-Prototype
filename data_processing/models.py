@@ -3,7 +3,6 @@ from django.db import models
 class IntelligenceReport(models.Model):
      reportID = models.AutoField(primary_key = True)
      fullReport = models.TextField()
-     intelligenceSource = models.TextField(null = True, blank = True)
 
      def __str__(self):
         return f"Report {self.pk}"
@@ -29,5 +28,5 @@ class EntityIntelligenceReport(models.Model):
 class EntityLink(models.Model):
     linkID = models.AutoField(primary_key=True)
     entity_1 = models.ForeignKey(Entity, on_delete = models.CASCADE, null = True)
-    entity_2 = models.ForeignKey(Entity, on_delete = models.CASCADE, null = True)
+    entity_2 = models.ForeignKey(Entity, on_delete = models.CASCADE, null = True, related_name='entity_1')
     intelligence_report = models.ForeignKey(IntelligenceReport, on_delete = models.CASCADE, null = True)
