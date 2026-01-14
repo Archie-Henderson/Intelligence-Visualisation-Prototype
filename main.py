@@ -17,15 +17,17 @@ def main():
     print("-" * 60)
 
     # Print named entities
-    print("ENTITIES (text | label):")
-    for ent in doc.ents:
+    print("ENTITIES (text | label) (first 30):")
+    for i, ent in enumerate(doc.ents):
+        if i >= 50:
+            break
         print(f"{ent.text} | {ent.label_}")
     print("-" * 60)
 
     # Print a few noun chunks (useful to see groups like 'a group of teenagers')
-    print("NOUN CHUNKS (first 50):")
+    print("NOUN CHUNKS (first 30):")
     for i, chunk in enumerate(doc.noun_chunks):
-        if i >= 50:
+        if i >= 30:
             break
         print(chunk.text)
     print("-" * 60)
@@ -39,8 +41,8 @@ def main():
     print("-" * 60)
 
     
-    print("TOKENS (first 50):")
-    for token in doc[:50]:
+    print("TOKENS (first 30):")
+    for token in doc[:30]:
         print(token.text, token.pos_, token.dep_)
     print("-" * 60)
     
