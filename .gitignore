@@ -121,3 +121,7 @@ __pycache__/
 # Django migrations (except __init__.py)
 data_processing/migrations/*
 !data_processing/migrations/__init__.py
+
+__pycache__/
+*.pyc
+data_processing/migrations/
