@@ -16,9 +16,7 @@ from data_processing.models import (
 )
 from data_processing.services.relationLevelCalculator import relationLevelCalculator
 
-# --- Optional spaCy/text-analysis import (skip tests if not implemented yet) ---
 try:
-    # If your teammate later creates this module, these tests will automatically start running.
     from data_processing.text_analysis import detect_entities  # type: ignore
 
     TEXT_ANALYSIS_AVAILABLE = True
