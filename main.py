@@ -5,33 +5,55 @@ from spacy.util import filter_spans
 from spacy.language import Language
 
 
-REG_VEHICLE_REG = re.compile(
-    r"\bReg(?:istration)?\s*(?:No\.?|Number|#)?\s*[:\-]?\s*([A-Z0-9]{2,7})\b",
-    re.I
-)
-REG_CRIME_GROUP_NAME = re.compile(
-    r"\b([A-Za-z]+)\s+crime\s+(?:group|family|gang)\b",
-    re.I
-)
+REG_VEHICLE_REG = re.compile(r"\bReg(?:istration)?\s*(?:No\.?|Number|#)?\s*[:\-]?\s*([A-Z0-9]{2,7})\b", re.I)
+
+REG_CRIME_GROUP_NAME = re.compile(r"\b([A-Za-z]+)\s+crime\s+(?:group|family|gang)\b", re.I)
+
+REG_DOB = re.compile(r"\bBn\.?\s*(\d{2}/\d{2}/\d{4})\b", re.I)
+
+REG_POSTCODE = re.compile(r"\b([A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2})\b", re.I)
+
+REG_PHONE = re.compile(r"\b(07\d{9})\b")
+
+#Currently not sure what to do with uncertain info. (trustworthy score to be thought about later)
+REG_ALIAS_CERTAIN = re.compile(
+    r"\b(?:aka|a\.k\.a\.|known\s+as|male\s+known\s+as)\s+([A-Z][A-Z0-9'’\-]+)\b",re.I)
+REG_ALIAS_UNCERTAIN = re.compile(
+    r"\b(?:may\s+be|possibly|believed\s+to\s+be)\s+(?:aka|a\.k\.a\.|known\s+as|male\s+known\s+as)\s+([A-Z][A-Z0-9'’\-]+)\b",re.I)
+
+
 
 @Language.component("regex_entities")
 def regex_entities(doc):
     new_ents = list(doc.ents)
     text = doc.text
 
-    for m in REG_VEHICLE_REG.finditer(text):
-        span = doc.char_span(m.start(1), m.end(1), label="VEHICLE_REG", alignment_mode="contract")
+    def add_span(start, end, label):
+        span = doc.char_span(start, end, label=label, alignment_mode="contract")
         if span:
             new_ents.append(span)
 
+    for m in REG_VEHICLE_REG.finditer(text):
+        add_span(m.start(1), m.end(1), "VEHICLE_REG")
+
+
     for m in REG_CRIME_GROUP_NAME.finditer(text):
-        span = doc.char_span(
-            m.start(1), m.end(1),
-            label="CRIME_GROUP",
-            alignment_mode="contract"
-        )
-        if span:
-            new_ents.append(span)
+        add_span(m.start(1), m.end(1), "CRIME_GROUP")
+
+    for m in REG_DOB.finditer(text):
+        add_span(m.start(1), m.end(1), "DOB")
+
+    for m in REG_POSTCODE.finditer(text):
+        add_span(m.start(1), m.end(1), "POSTCODE")
+
+    for m in REG_PHONE.finditer(text):
+        add_span(m.start(1), m.end(1), "PHONE")
+
+    for m in REG_ALIAS_UNCERTAIN.finditer(text):
+        add_span(m.start(1), m.end(1), "ALIAS_UNCERTAIN")
+
+    for m in REG_ALIAS_CERTAIN.finditer(text):
+        add_span(m.start(1), m.end(1), "ALIAS_CERTAIN")
 
     doc.ents = filter_spans(new_ents)
     return doc
@@ -42,8 +64,17 @@ def main():
 
     ruler = nlp.add_pipe("entity_ruler", before="ner")
 
+    #car
+    COLORS = ["black","white","silver","grey","gray","red","blue","yellow","green"]
+    GENERIC_VEHICLES = ["car","vehicle","van","truck","lorry","motorbike","motorcycle","scooter","bike"]
+    MAKES = ["bmw","audi","toyota","ford","vauxhall","mercedes","volkswagen","vw","nissan","honda","hyundai","kia","tesla","range","rover"]
+
+    DRUGS = ["heroin", "cocaine", "ketamine", "cannabis", "ecstasy", "mdma"]
+
+
     #Custom entity patterns
     ruler.add_patterns([
+
         # GROUP
         {"label": "GROUP", "pattern": [{"LOWER": "group"}, {"LOWER": "of"}, {"LOWER": {"IN": ["teenagers", "males", "men", "women", "boys", "girls", "people"]}}]},
         {"label": "GROUP", "pattern": [{"LOWER": {"IN": ["different", "several", "multiple", "large"]}}, {"LOWER": {"IN": ["groups", "group"]}, "OP": "?"}, {"LOWER": {"IN": ["of"]}, "OP": "?"}, {"LOWER": {"IN": ["males", "men", "women", "teenagers", "people"]}}]},
@@ -52,12 +83,19 @@ def main():
         # ROLE
         {"label": "ROLE", "pattern": [{"LOWER": {"IN": ["driver", "passenger", "owner", "enforcer", "courier"]}}]},
 
-        # VEHICLE_DESC
-        {"label": "VEHICLE_DESC", "pattern": [{"LOWER": {"IN": ["black", "white", "silver", "grey", "gray", "red", "blue", "yellow", "green"]}}, {"LOWER": {"IN": ["bmw", "audi", "toyota", "ford", "vauxhall", "mercedes"]}}]},
+        # VEHICLE
+        {"label": "VEHICLE", "pattern": [{"LOWER": {"IN": GENERIC_VEHICLES}}]},
+        {"label": "VEHICLE", "pattern": [{"LOWER": {"IN": COLORS}}, {"LOWER": {"IN": GENERIC_VEHICLES}}]},
+        {"label": "VEHICLE", "pattern": [{"LOWER": {"IN": MAKES}}]},
+        {"label": "VEHICLE", "pattern": [{"LOWER": {"IN": MAKES}},{"TEXT": {"REGEX": r"^[A-Za-z0-9\-]+$"}, "OP": "+"}]},
+        {"label": "VEHICLE", "pattern": [{"LOWER": {"IN": COLORS}}, {"LOWER": {"IN": MAKES}},{"TEXT": {"REGEX": r"^[A-Za-z0-9\-]+$"}, "OP": "*"}]},
 
         # ITEM
         {"label": "ITEM", "pattern": [{"LOWER": "wheelie"}, {"LOWER": "bins"}]},
         {"label": "ITEM", "pattern": [{"LOWER": {"IN": ["package", "packages", "knife", "knives", "bat", "hammer", "hammers"]}}]},
+
+        #DRUG
+        {"label": "DRUG", "pattern": [{"LOWER": {"IN": DRUGS}}]},
 
     ])
 
@@ -73,7 +111,7 @@ def main():
     # print entities
     KEEP = {
         "PERSON", "GPE", "LOC", "FAC", "DATE", "TIME", "ORG",
-        "GROUP", "ROLE", "VEHICLE_DESC", "VEHICLE_REG", "ITEM", "CRIME_GROUP"
+        "GROUP", "ROLE", "VEHICLE", "VEHICLE_REG", "ITEM", "CRIME_GROUP","ALIAS_UNCERTAIN", "PHONE", "POSTCODE", "DOB",
     }
 
     print("Pipeline:", nlp.pipe_names)
