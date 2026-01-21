@@ -40,7 +40,7 @@ d3.json("/static/graph_data.json", function(data) {
     .data(data.nodes)
     .enter()
     .append("circle")
-      .attr("r", 4)
+      .attr("r", 8)
       .style("fill", "#69b3a2")
 
   node.append("title")
@@ -52,9 +52,9 @@ d3.json("/static/graph_data.json", function(data) {
     .enter()
     .append('text')
     .text(node => node.name)
-    .attr('font-size', 4)
-    .attr('dx', 0)
-    .attr('dy', -4)
+    .attr('font-size', 8)
+    .attr('dx', 5)
+    .attr('dy', -5)
 
   // List forces to apply
   var simulation = d3.forceSimulation(data.nodes)
@@ -63,7 +63,7 @@ d3.json("/static/graph_data.json", function(data) {
             .links(data.links)
             .strength(2)
       )
-      .force("charge", d3.forceManyBody().strength(-100))
+      .force("charge", d3.forceManyBody().strength(-200))
       .force("x", d3.forceX(width/2))
       .force("y", d3.forceY(height/2))
       .on("end", ticked);
@@ -87,8 +87,8 @@ d3.json("/static/graph_data.json", function(data) {
          .attr("cy", function(d) { return d.y; });
 
     text
-         .attr("dx", function(d) { return d.x+2; })
-         .attr("dy", function(d) { return d.y-2; });
+         .attr("dx", function(d) { return d.x+3; })
+         .attr("dy", function(d) { return d.y-3; });
   }
 
   // Reheat the simulation when drag starts, and fix the subject position.
