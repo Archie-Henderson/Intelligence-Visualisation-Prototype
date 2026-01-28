@@ -1,0 +1,15 @@
+image: python:3.12
+
+stages:
+  - test
+
+before_script:
+  - python -m venv venv
+  - . venv/bin/activate
+  - pip install --upgrade pip
+  - pip install django
+
+test:
+  stage: test
+  script:
+    - python manage.py test
