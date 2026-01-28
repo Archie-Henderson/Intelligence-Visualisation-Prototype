@@ -10,7 +10,8 @@ import json
 def graph_view(request):
     ents = Entity.objects.all()
     links = EntityLink.objects.all()
-    context = {'unlinked':[]}
+    context = {'unlinked':[],
+               "cur_url": reverse('data_visualisation:graph')}
     
     json_path = os.path.abspath("./static/graph_data.json")
 
@@ -27,7 +28,6 @@ def graph_view(request):
     for link in links:
         data['links'].append({'source':link.entity_1.entityID, 'target':link.entity_2.entityID})
 
-    context = {"cur_url": reverse('data_visualisation:graph')}
     print(context)
 
     print(json_path)
