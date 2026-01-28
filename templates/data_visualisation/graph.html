@@ -45,6 +45,7 @@ d3.json("/static/graph_data.json", function(data) {
     .append("circle")
       .attr("r", 8)
       .style("fill", "#69b3a2")
+      .on('click', function(d){window.location.href = window.location.href + 'entities/' + d.id})
 
   node.append("title")
   .text(d => d.name);

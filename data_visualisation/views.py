@@ -27,9 +27,16 @@ def graph_view(request):
     for link in links:
         data['links'].append({'source':link.entity_1.entityID, 'target':link.entity_2.entityID})
 
+    context = {"cur_url": reverse('data_visualisation:graph')}
+    print(context)
 
     print(json_path)
     with open(json_path, "w") as f:
         json.dump(data, f)
 
     return render(request, 'data_visualisation/graph.html', context = context)
+
+def entity_details(request, ent_id):
+    print(ent_id)
+    context = {'ent_id':ent_id}
+    return render(request, 'data_visualisation/entity_details.html', context=context)
