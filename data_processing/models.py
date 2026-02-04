@@ -1,40 +1,41 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
 
 # intelligence report contents are defined below
 class IntelligenceReport(models.Model):
-     reportID = models.AutoField(primary_key = True)
-     fullReport = models.TextField()
-     intelligenceSource = models.TextField(null = True, blank = True)
-     creationTime = models.DateTimeField(auto_now_add= True)
+    reportID = models.AutoField(primary_key = True)
+    fullReport = models.TextField()
+    intelligenceSource = models.TextField(null = True, blank = True)
+    creationTime = models.DateTimeField(auto_now_add= True)
 
-     def __str__(self):
+    def __str__(self):
         return f"Report {self.pk}"
 
 # entities are defined below
 class Entity(models.Model):
-     entityID = models.AutoField(primary_key = True)
+    entityID = models.AutoField(primary_key = True)
 
-     PEOPLE = "people"
-     VEHICLE = "vehicle"
-     TELECOM = "telecom"
-     LOCATION = "location"
+    PEOPLE = "people"
+    VEHICLE = "vehicle"
+    TELECOM = "telecom"
+    LOCATION = "location"
 
-     ENTITY_TYPES = [
+    ENTITY_TYPES = [
         (PEOPLE, "People"), (VEHICLE, "Vehicle"), (TELECOM, "Telecom"), (LOCATION, "Location"),
     ]
 
-     name = models.CharField(max_length = 255)
-     type = models.CharField(max_length = 20, choices= ENTITY_TYPES)
+    name = models.CharField(max_length = 255)
+    type = models.CharField(max_length = 20, choices= ENTITY_TYPES)
 
-     def __str__(self):
+    def __str__(self):
         return f"{self.name} ({self.type})"
 
 # user details are defined below
-class Users(models.Model):
-     # ranks by the 'Metropolitan Police' website
-     RANK_DATA = [
+class User(AbstractUser):
+    # ranks by the 'Metropolitan Police' website
+    RANK_DATA = [
         ("Constable", "Constable", 1),
         ("Sergeant", "Sergeant", 2),
         ("Inspector", "Inspector", 3),
@@ -48,30 +49,32 @@ class Users(models.Model):
         ("Commissioner", "Commissioner", 11),
     ]
      
-     # ordering of the ranks
-     RANKS = [(name, display) for (name, display, level) in RANK_DATA]
-     RANK_ORDER = {name: level for (name, display, level) in RANK_DATA}
+    # ordering of the ranks
+    RANKS = [(name, display) for (name, display, level) in RANK_DATA]
+    RANK_ORDER = {name: level for (name, display, level) in RANK_DATA}
 
-     userID = models.AutoField(primary_key=True)
-     name = models.CharField(max_length=255)
-     rank = models.CharField(max_length=50, choices=RANKS)
+    isManager = models.BooleanField(default= False)
+    policeID = models.CharField(max_length= 50, unique= True, blank=True)
+    rank = models.CharField(max_length=50, choices=RANKS, blank=True)
 
-     def __str__(self):
-          return f"{self.name} ({self.rank})"
+    def __str__(self):
+        if self.rank:
+            return f"{self.username} ({self.rank})"
+        return self.username
 
-     @property
-     def rank_level(self):
-          return self.RANK_ORDER.get(self.rank)
+    @property
+    def rank_level(self):
+        return self.RANK_ORDER.get(self.rank)
 
 # entity's intelligence report creation is below
 class EntityIntelligenceReport(models.Model):
-     entity = models.ForeignKey(Entity, on_delete = models.CASCADE)
-     report = models.ForeignKey(IntelligenceReport, on_delete = models.CASCADE)
+    entity = models.ForeignKey(Entity, on_delete = models.CASCADE)
+    report = models.ForeignKey(IntelligenceReport, on_delete = models.CASCADE)
 
-     class Meta:
+    class Meta:
         unique_together = ("entity", "report")
 
-     def __str__(self):
+    def __str__(self):
         return f"{self.entity} in {self.report}"
 
 # entity links between two entities are defined below
@@ -104,7 +107,7 @@ class EntityLink(models.Model):
 class AccessLog(models.Model):
     
     logID = models.AutoField(primary_key= True)
-    user = models.ForeignKey(Users, on_delete= models.SET_NULL, null =  True, blank = True)
+    user = models.ForeignKey(User, on_delete= models.SET_NULL, null =  True, blank = True)
     report = models.ForeignKey(IntelligenceReport, on_delete= models.SET_NULL, null =  True, blank = True)
 
     # identify what was the action (edited, added, viewed...)
@@ -117,3 +120,4 @@ class AccessLog(models.Model):
 
     def __str__(self):
         return f"{self.actionTime} {self.actionType} {self.user} {self.report}"
+    

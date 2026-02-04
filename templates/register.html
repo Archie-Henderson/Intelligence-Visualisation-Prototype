@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register Officer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f6f6f6;
+        }
+        .container {
+            width: 400px;
+            margin: 80px auto;
+            padding: 25px;
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+        .errorlist {
+            color: red;
+            margin-bottom: 10px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #1f6feb;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1557b0;
+        }
+        .login-link {
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <h1>Officer Registration</h1>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.non_field_errors }}
+
+        {% for field in form %}
+            <div>
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {{ field.errors }}
+            </div>
+        {% endfor %}
+
+        <button type="submit">Register</button>
+    </form>
+
+    <div class="login-link">
+        Already have an account?
+        <a href="/data_processing/login/">Login</a><br />
+    </div>
+</div>
+</body>
+</html>
