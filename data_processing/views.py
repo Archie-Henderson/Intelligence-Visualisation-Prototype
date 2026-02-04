@@ -25,13 +25,13 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect('register')
+            return redirect('index')
     else:
         form = UserForm()
 
     return render(request, 'register.html', {'form': form})
 
-def login(request):
+def login_view(request):
     if request.method == 'POST':
         user = authenticate(
             request,
