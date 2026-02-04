@@ -1,3 +1,22 @@
 <!DOCTYPE html>
-<script>console.log("{{ ent_id }}")</script>
-<body>Yet to be implemented. Current entity: {{ ent_id }}</body>
+<body>
+
+    <div id="reports">
+        <h3>Reports mentioning {{ entity.name }}</h3>
+        <ul>
+            {% for report in reports %}
+                <li>Report {{ report.reportID }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div id="connections">
+        <h3>Entities related to {{ entity.name }}</h3>
+        <ul>
+            {% for link in links %}
+                <li>{{ other_ent.name }} connected through report {{ link.report.reportID }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</body>
