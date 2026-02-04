@@ -14,7 +14,7 @@
         <h3>Entities related to {{ entity.name }}</h3>
         <ul>
             {% for link in links %}
-                <li>{{ other_ent.name }} connected through report {{ link.report.reportID }}</li>
+                <li>{{ link.other_ent.name }} connected through report {{ link.report.reportID }}</li>
             {% endfor %}
         </ul>
     </div>
