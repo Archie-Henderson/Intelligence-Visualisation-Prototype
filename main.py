@@ -3,24 +3,36 @@ import spacy
 from spacy.pipeline import EntityRuler
 from spacy.util import filter_spans
 from spacy.language import Language
+from spacy.tokens import Span
+
 
 
 REG_VEHICLE_REG = re.compile(r"\bReg(?:istration)?\s*(?:No\.?|Number|#)?\s*[:\-]?\s*([A-Z0-9]{2,7})\b", re.I)
 
 REG_CRIME_GROUP_NAME = re.compile(r"\b(?!the\b)([A-Za-z]+)\s+crime\s+(?:group|family|gang)\b", re.I)
+REG_OCG = re.compile(r"\b([A-Z]{3,})\s+OCG\b")
 
-REG_DOB = re.compile(r"\bBn\.?\s*(\d{2}/\d{2}/\d{4})\b", re.I)
+REG_DOB = re.compile(r"\bBn\.?\s*[:\-]?\s*(\d{2}/\d{2}/\d{4})\b", re.I)
 
 REG_POSTCODE = re.compile(r"\b([A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2})\b", re.I)
 
 REG_PHONE = re.compile(r"\b(07\d{9})\b")
+
+REG_BLOCK_PERSON = re.compile(
+    r"(?m)^\s*([A-Z][a-z]+)"
+    r"(?:\s+(?:['‘’][^'‘’]{1,30}['‘’]))?"
+    r"(?:\s+[A-Z][a-z]+)?"
+    r"\s+([A-Z]{2,})\s*$"
+)
+REG_ADDRESS = re.compile(r"(?m)^\s*(\d{1,4}\s+[A-Z][A-Za-z'\-]*(?:\s+[A-Z][A-Za-z'\-]*)*\s+(?:Road|Street|Drive|Avenue|Lane|Place|Crescent|Court|Terrace))\s*$")
+
 
 #Currently not sure what to do with uncertain info. (trustworthy score to be thought about later)
 REG_ALIAS = re.compile(
     r"\b(?P<uncertain>may\s+be|possibly|believed\s+to\s+be|thought\s+to\s+be|reported\s+to\s+be)?\s*"
     r"(?P<intro>aka|a\.k\.a\.|known\s+as|male\s+known\s+as)\s*"
     r"[:\-]?\s*"
-    r"(?P<alias>[A-Z][A-Z0-9'’\-]{2,})\b",
+    r"(?P<alias>[A-Za-z][A-Za-z0-9'’\-]{1,})\b",
     re.I
 )
 
@@ -29,6 +41,7 @@ REG_ALIAS = re.compile(
 def regex_entities(doc):
     new_ents = list(doc.ents)
     text = doc.text
+
 
     def remove_overlaps(start, end):
         nonlocal new_ents
@@ -40,16 +53,34 @@ def regex_entities(doc):
         if span:
             new_ents.append(span)
 
+
+    for m in REG_BLOCK_PERSON.finditer(text):
+        start, end = m.start(1), m.end(2)
+        remove_overlaps(start, end)
+        add_span(start, end, "PERSON")
+
     for m in REG_VEHICLE_REG.finditer(text):
         add_span(m.start(1), m.end(1), "VEHICLE_REG")
 
     for m in REG_CRIME_GROUP_NAME.finditer(text):
         add_span(m.start(1), m.end(1), "CRIME_GROUP")
 
+    for m in REG_OCG.finditer(text):
+        start, end = m.start(1), m.end(1)
+        remove_overlaps(start, end)
+        add_span(start, end, "CRIME_GROUP")
+
+
+
     for m in REG_DOB.finditer(text):
         start, end = m.start(1), m.end(1)
-        remove_overlaps(start, end) 
-        add_span(start, end, "DOB")
+        remove_overlaps(start, end)
+
+        span = doc.char_span(start, end, label="DOB", alignment_mode="expand")
+        if span:
+            new_ents.append(span)
+
+
 
     for m in REG_POSTCODE.finditer(text):
         add_span(m.start(1), m.end(1), "POSTCODE")
@@ -66,12 +97,38 @@ def regex_entities(doc):
         add_span(start, end, label)
 
 
+    for m in REG_ADDRESS.finditer(text):
+        start, end = m.start(1), m.end(1)
+        remove_overlaps(start, end)
+        add_span(start, end, "ADDRESS") 
+
+
+
+    surname_set = set()
+    for ent in new_ents:
+        if ent.label_ == "PERSON":
+            parts = ent.text.strip().split()
+            if len(parts) >= 2:
+                surname = parts[-1]
+                # keep only all-caps surnames
+                if surname.isupper() and surname.isalpha():
+                    surname_set.add(surname)
+
+
+
+    #!!currently overwriting org to person, etc, check needed just in case 
     cleaned = []
     for e in new_ents:
         if e.label_ == "PERSON" and e.text.strip().lower() in {"glasgow", "paisley"}:
             continue
         if e.label_ == "PERSON" and e.text.strip().lower() == "bn":
             continue
+        #ORG→ PERSON
+        if e.label_ == "ORG":
+            txt = e.text.strip()
+            if txt in surname_set:
+                cleaned.append(Span(doc, e.start, e.end, label="PERSON"))
+                continue
         cleaned.append(e)
 
     doc.ents = filter_spans(cleaned)
@@ -89,6 +146,7 @@ def main():
     GENERIC_VEHICLES = ["car","vehicle","van","truck","lorry","motorbike","motorcycle","scooter","bike"]
     MAKES = ["bmw","audi","toyota","ford","vauxhall","mercedes","volkswagen","vw","nissan","honda","hyundai","kia","tesla","range","rover"]
 
+    #DRUGS
     DRUGS = ["heroin", "cocaine", "ketamine", "cannabis", "ecstasy", "mdma"]
 
 
@@ -116,6 +174,8 @@ def main():
 
         #DRUG
         {"label": "DRUG", "pattern": [{"LOWER": {"IN": DRUGS}}]},
+        {"label": "DRUG", "pattern": [{"LOWER": "controlled"}, {"LOWER": "drugs"}]},
+
 
     ])
 
@@ -131,7 +191,7 @@ def main():
     # print entities
     KEEP = {
         "PERSON", "GPE", "LOC", "FAC", "DATE", "TIME", "ORG",
-        "GROUP", "ROLE", "VEHICLE", "VEHICLE_REG", "ITEM", "DRUG", "CRIME_GROUP","ALIAS_UNCERTAIN", "PHONE", "POSTCODE", "DOB",
+        "GROUP", "ROLE", "VEHICLE", "VEHICLE_REG", "ITEM", "DRUG", "CRIME_GROUP","ALIAS_UNCERTAIN","ALIAS_CERTAIN", "PHONE", "POSTCODE", "DOB","ADDRESS",
     }
 
     print("Pipeline:", nlp.pipe_names)
