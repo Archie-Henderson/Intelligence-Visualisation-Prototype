@@ -30,8 +30,6 @@ def graph_view(request):
     for link in links:
         data['links'].append({'source':link.entity_1.entityID, 'target':link.entity_2.entityID})
 
-    print(context)
-
     print(json_path)
     with open(json_path, "w") as f:
         json.dump(data, f)
@@ -39,6 +37,19 @@ def graph_view(request):
     return render(request, 'data_visualisation/graph.html', context = context)
 
 def entity_details(request, ent_id):
-    print(ent_id)
-    context = {'ent_id':ent_id}
+    entity = Entity.objects.get(entityID = ent_id)
+    reports=[]
+    for entity_intelligence_report in EntityIntelligenceReport.objects.filter(entity = entity):
+        reports.append(entity_intelligence_report.report)
+
+    links = []
+
+    for link in EntityLink.objects.filter(entity_1 = entity):
+        links.append({'other_ent':link.entity_2.entityID, 'report':link.intelligence_report})
+
+    for link in EntityLink.objects.filter(entity_2 = entity):
+        links.append({'other_ent':link.entity_1, 'report':link.intelligence_report})
+
+    print(entity, reports, links)
+    context = {'entity':entity, 'reports':reports, 'links':links}
     return render(request, 'data_visualisation/entity_details.html', context=context)

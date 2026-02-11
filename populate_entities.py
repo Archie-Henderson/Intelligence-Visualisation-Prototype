@@ -136,33 +136,33 @@ G214XD
 
 Regularly carries a knife concealed in his socks when outwith his home address. """}]
     
-    entities = [{'name': 'Causeyside, Paisley', 'type': 'street'},
-                {'name': 'BMW Car', 'type': 'car'},
-                {'name': 'McDonalds car park, Linwood', 'type': 'location'},
-                {'name': 'Canal bar, Stow Brae, Paisley', 'type': 'location'},
-                {'name': 'Scott BAMBER', 'type': 'person'},
-                {'name': '80 Maryhill Road Glasgow, G207QB', 'type':'address'},
-                {'name':'Queen Margaret Drive, Glasgow', 'type': 'street'},
-                {'name':'Pollok Park, Glasgow residents', 'type':'group'},
-                {'name':'Haggs Road, Glasgow', 'type': 'street'},
-                {'name': 'Vauxhall Astra SF13DDR', 'type': 'car'},
-                {'name': 'Stumps Bar', 'type':'location'},
-                {'name':'7 Peel Street Glasgow, G115LL', 'type': 'address'},
-                {'name':'Robert UNDERWOOD', 'type':'person'},
-                {'name':'12 Thornwood Terrace Glasgow, G117QZ', 'type':'address'},
-                {'name':'Napiershall Street', 'type':'street'},
-                {'name':'Richard', 'type':'person'},
-                {'name':'Michelle', 'type':'person'},
-                {'name':'Kevin GRANDER', 'type':'person'},
-                {'name':'Tadpole', 'type':'alias'},
-                {'name':'LKA 229 Liddesdale Road Glasgow, G227QT', 'type':'address'},
-                {'name':'POLLOCK', 'type':'group'},
-                {'name':'Teabag', 'type':'alias'},
-                {'name':'Saracen Street, Glasgow', 'type':'street'},
-                {'name':'Lidl near Saracen Street', 'type':'location'},
-                {'name':'McFarlane Street Paisley Garage', 'type':'location'},
-                {'name':'Hugh GILLESPIE', 'type':'person'},
-                {'name':'33 Cockmuir Street Glasgow, G214XD', 'type':'address'}
+    entities = [{'name': 'Causeyside, Paisley', 'type': 'street', 'reports':[1]},
+                {'name': 'BMW Car', 'type': 'car', 'reports':[2]},
+                {'name': 'McDonalds car park, Linwood', 'type': 'location', 'reports':[2]},
+                {'name': 'Canal bar, Stow Brae, Paisley', 'type': 'location', 'reports':[3]},
+                {'name': 'Scott BAMBER', 'type': 'person', 'reports':[4]},
+                {'name': '80 Maryhill Road Glasgow, G207QB', 'type':'address', 'reports':[4]},
+                {'name':'Queen Margaret Drive, Glasgow', 'type': 'street', 'reports':[4]},
+                {'name':'Pollok Park, Glasgow residents', 'type':'group', 'reports':[5]},
+                {'name':'Haggs Road, Glasgow', 'type': 'street', 'reports':[5]},
+                {'name': 'Vauxhall Astra SF13DDR', 'type': 'car', 'reports':[6]},
+                {'name': 'Stumps Bar', 'type':'location', 'reports':[6]},
+                {'name':'7 Peel Street Glasgow, G115LL', 'type': 'address', 'reports':[6]},
+                {'name':'Robert UNDERWOOD', 'type':'person', 'reports':[6]},
+                {'name':'12 Thornwood Terrace Glasgow, G117QZ', 'type':'address', 'reports':[6]},
+                {'name':'Napiershall Street', 'type':'street', 'reports':[7]},
+                {'name':'Richard', 'type':'person', 'reports':[7]},
+                {'name':'Michelle', 'type':'person', 'reports':[7]},
+                {'name':'Kevin GRANDER', 'type':'person', 'reports':[8]},
+                {'name':'Tadpole', 'type':'alias', 'reports':[8]},
+                {'name':'LKA 229 Liddesdale Road Glasgow, G227QT', 'type':'address', 'reports':[8]},
+                {'name':'POLLOCK', 'type':'group', 'reports':[8]},
+                {'name':'Teabag', 'type':'alias', 'reports':[9]},
+                {'name':'Saracen Street, Glasgow', 'type':'street', 'reports':[9]},
+                {'name':'Lidl near Saracen Street', 'type':'location', 'reports':[9]},
+                {'name':'McFarlane Street Paisley Garage', 'type':'location', 'reports':[10]},
+                {'name':'Hugh GILLESPIE', 'type':'person', 'reports':[11]},
+                {'name':'33 Cockmuir Street Glasgow, G214XD', 'type':'address', 'reports':[11]}
                 ]
     
     links = [{'e1': 2,'e2': 3, 'report': 2},
@@ -189,7 +189,7 @@ Regularly carries a knife concealed in his socks when outwith his home address. 
         add_report(report['fullReport'])
 
     for ent in entities:
-        add_entity(ent['name'], ent['type'])
+        add_entity(ent['name'], ent['type'], ent['reports'])
 
     for link in links:
         add_link(Entity.objects.get(entityID=link['e1']), Entity.objects.get(entityID=link['e2']), IntelligenceReport.objects.get(reportID=link['report']))
@@ -201,12 +201,17 @@ def add_report(text):
     report.save()
     return report
 
-def add_entity(name, type):
+def add_entity(name, type, reportIDs):
     ent = Entity.objects.create()
     ent.name = name
     ent.type = type
     ent.save()
-    return ent
+    for reportID in reportIDs:
+        entity_intelligence_report = EntityIntelligenceReport.objects.create()
+        entity_intelligence_report.entity = Entity.objects.get(name = name)
+        entity_intelligence_report.report = IntelligenceReport.objects.get(reportID = reportID)
+        entity_intelligence_report.save()
+    return ent, entity_intelligence_report
 
 def add_link(ent1, ent2, report):
     link = EntityLink.objects.get_or_create(entity_1 = ent1, entity_2 = ent2, intelligence_report = report)[0]
