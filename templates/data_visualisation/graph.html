@@ -1,12 +1,41 @@
 <!DOCTYPE html>
+<head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- Load d3.js -->
 <script src="https://d3js.org/d3.v4.js"></script>
+</head>
 
 <body>
-<div id="network_graph" class="svg-container"></div>
 
+<!-- Flex container -->
+<div style="display: flex; height: 100vh;">
+
+<!--sidebar-->
+<div id="sidebar" style="
+  width: 250px;
+  background-color: #f5f5f5;
+  padding: 15px;
+  overflow-y: auto;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+">
+  <h3>Sidebar</h3>
+  <p>All Entities:</p>
+  <ul>
+    <script>console.log("{{linked}}")</script>
+    {% for ent in linked %}
+      <li data-id="{{ ent.entityID }}" style="cursor: pointer;">{{ ent.name }}</li>
+    {% endfor %}
+    {% for ent in unlinked %}
+      <li data-id="{{ ent.entityID }}" style="cursor: pointer;">{{ ent.name }}</li>
+    {% endfor %}
+  </ul>
+</div>
+  
+<div id="network_graph" style="flex-grow: 1;" class="svg-container"></div>
+
+</div>
 
 <script>
 
@@ -142,8 +171,19 @@ d3.json("/static/graph_data.json", function(data) {
       nodes.fx = null
       nodes.fy = null
     });
-
   nodes.call(dragDrop);
+
+  //Sidebar interaction
+  document.querySelectorAll("#sidebar li[data-id]").forEach(function(li){
+    li.addEventListener("click", function(){
+        const entityId = this.getAttribute("data-id");
+        const targetNode = d3.select("#node-" + entityId);
+
+        node.style("fill", "#69b3a2").attr("r", 8);
+
+        targetNode.style("fill", "#ff0000").attr("r", 14);
+    });
   });
+});
 </script>
 </body>
