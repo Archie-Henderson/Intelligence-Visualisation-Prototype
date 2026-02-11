@@ -11,6 +11,7 @@ def graph_view(request):
     ents = Entity.objects.all()
     links = EntityLink.objects.all()
     context = {'unlinked':[],
+               'linked':[],
                "cur_url": reverse('data_visualisation:graph')}
     
     json_path = os.path.abspath("./static/graph_data.json")
@@ -24,6 +25,7 @@ def graph_view(request):
             print("Unlinked: " + str(ent.entityID) + ", " + ent.name)
         else:
             data['nodes'].append({'id':ent.entityID, 'name':ent.name})
+            context['linked'].append({'id':ent.entityID, 'name':ent.name})
     
     for link in links:
         data['links'].append({'source':link.entity_1.entityID, 'target':link.entity_2.entityID})
