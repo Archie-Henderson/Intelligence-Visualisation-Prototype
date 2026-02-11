@@ -1,31 +1,67 @@
 <!DOCTYPE html>
+<head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- Load d3.js -->
 <script src="https://d3js.org/d3.v4.js"></script>
+</head>
 
 <body>
-<div id="network_graph"></div>
 
+<!-- Flex container -->
+<div style="display: flex; height: 100vh;">
+
+<!--sidebar-->
+<div id="sidebar" style="
+  width: 250px;
+  background-color: #f5f5f5;
+  padding: 15px;
+  overflow-y: auto;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+">
+  <h3>Sidebar</h3>
+  <p>All Entities:</p>
+  <ul>
+    <script>console.log("{{linked}}")</script>
+    {% for ent in linked %}
+      <li data-id="{{ ent.entityID }}" style="cursor: pointer;">{{ ent.name }}</li>
+    {% endfor %}
+    {% for ent in unlinked %}
+      <li data-id="{{ ent.entityID }}" style="cursor: pointer;">{{ ent.name }}</li>
+    {% endfor %}
+  </ul>
+</div>
+  
+<div id="network_graph" style="flex-grow: 1;"></div>
+
+</div>
 
 <script>
 
 // set the dimensions and margins of the graph
-const margin = {top: window.innerHeight * 0.01, right: window.innerWidth * 0.01, bottom: window.innerHeight * 0.01, left: window.innerWidth * 0.01},
-  width = window.innerWidth - margin.left - margin.right,
-  height = window.innerHeight - margin.top - margin.bottom;
+const margin = {
+    top: window.innerHeight * 0.01,
+    right: window.innerWidth * 0.01,
+    bottom: window.innerHeight * 0.01,
+    left: window.innerWidth * 0.01
+};
+
+//Account for sidebar width
+const sidebarWidth = 250;
+const width = window.innerWidth - sidebarWidth - margin.left - margin.right;
+const height = window.innerHeight - margin.top - margin.bottom;
 
 // append the svg object to the body of the page
 const svg = d3.select("#network_graph")
-.append("svg")
-  .attr("width", window.innerWidth)
-  .attr("height", window.innerHeight)
-.call(d3.zoom().on("zoom", function () {
-       svg.attr("transform", d3.event.transform)
-    }))
-.append("g")
-  .attr("transform",
-        `translate(${margin.left}, ${margin.top})`);
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",`translate(${margin.left}, ${margin.top})`)
+  .call(d3.zoom().on("zoom", function () {
+    d3.select(this).select("g").attr("transform", d3.event.transform);
+  }))
 
 d3.json("/static/graph_data.json", function(data) {
 
@@ -45,6 +81,7 @@ d3.json("/static/graph_data.json", function(data) {
     .append("circle")
       .attr("r", 8)
       .style("fill", "#69b3a2")
+      .attr("id", d => "node-" + d.id)
       .on('click', function(d){window.location.href = window.location.href + 'entities/' + d.id})
 
   node.append("title")
@@ -107,6 +144,20 @@ d3.json("/static/graph_data.json", function(data) {
     });
 
   node.call(dragDrop);
+  
+
+  //Sidebar interaction
+    document.querySelectorAll("#sidebar li[data-id]").forEach(function(li){
+      li.addEventListener("click", function(){
+          const entityId = this.getAttribute("data-id");
+          const targetNode = d3.select("#node-" + entityId);
+
+          node.style("fill", "#69b3a2").attr("r", 8);
+
+          targetNode.style("fill", "#ff0000").attr("r", 14);
+      });
   });
+  
+});
 </script>
 </body>
