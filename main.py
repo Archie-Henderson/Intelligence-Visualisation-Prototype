@@ -7,7 +7,8 @@ from spacy.tokens import Span
 
 
 
-REG_VEHICLE_REG = re.compile(r"\bReg(?:istration)?\s*(?:No\.?|Number|#)?\s*[:\-]?\s*([A-Z0-9]{2,7})\b", re.I)
+REG_VEHICLE_REG = re.compile(
+    r"\bReg(?:istration)?\s*\.?\s*(?:No\.?|Number|#)?\s*[:\-]?\s*([A-Z0-9]{2,7})\b", re.I)
 
 REG_CRIME_GROUP_NAME = re.compile(r"\b(?!the\b)([A-Za-z]+)\s+crime\s+(?:group|family|gang)\b", re.I)
 REG_OCG = re.compile(r"\b([A-Z]{3,})\s+OCG\b")
