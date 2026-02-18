@@ -9,7 +9,7 @@ from django.test import TestCase, SimpleTestCase
 from data_processing.models import (
     IntelligenceReport,
     Entity,
-    Users,
+    User,
     EntityIntelligenceReport,
     EntityLink,
     AccessLog,
@@ -89,8 +89,8 @@ class BasicDatabaseExistenceTests(TestCase):
         self.assertEqual(Entity.objects.count(), 1)
 
     def test_user_exists(self):
-        Users.objects.create(name="Alice", rank="Constable")
-        self.assertTrue(Users.objects.exists())
+        User.objects.create(name="Alice", rank="Constable")
+        self.assertTrue(User.objects.exists())
 
     def test_entity_intelligence_report_exists(self):
         e = Entity.objects.create(name="SG19GGT", type=Entity.VEHICLE)
@@ -105,7 +105,7 @@ class BasicDatabaseExistenceTests(TestCase):
         self.assertEqual(EntityLink.objects.count(), 1)
 
     def test_access_log_exists(self):
-        u = Users.objects.create(name="Bob", rank="Sergeant")
+        u = User.objects.create(name="Bob", rank="Sergeant")
         r = IntelligenceReport.objects.create(fullReport="Report")
         AccessLog.objects.create(user=u, report=r, actionType="view")
         self.assertTrue(AccessLog.objects.exists())
@@ -146,24 +146,24 @@ class EntityModelTests(TestCase):
         self.assertIn("vehicle", s)  # your type constants are lowercase values
 
 
-class UsersModelTests(TestCase):
+class UserModelTests(TestCase):
     def test_create_user_valid_rank(self):
-        u = Users.objects.create(name="Alice", rank="Constable")
+        u = User.objects.create(name="Alice", rank="Constable")
         self.assertIsNotNone(u.userID)
         self.assertEqual(u.rank, "Constable")
         self.assertEqual(u.rank_level, 1)
 
     def test_user_invalid_rank_fails_full_clean(self):
-        u = Users(name="Bob", rank="NotARank")
+        u = User(name="Bob", rank="NotARank")
         with self.assertRaises(ValidationError):
             u.full_clean()
 
     def test_rank_level_property(self):
-        u = Users.objects.create(name="Carol", rank="Commissioner")
+        u = User.objects.create(name="Carol", rank="Commissioner")
         self.assertEqual(u.rank_level, 11)
 
     def test_user_str(self):
-        u = Users.objects.create(name="Dave", rank="Inspector")
+        u = User.objects.create(name="Dave", rank="Inspector")
         self.assertIn("Dave", str(u))
         self.assertIn("Inspector", str(u))
 
@@ -252,7 +252,7 @@ class EntityLinkModelTests(TestCase):
 
 class AccessLogModelTests(TestCase):
     def setUp(self):
-        self.user = Users.objects.create(name="Alice", rank="Sergeant")
+        self.user = User.objects.create(name="Alice", rank="Sergeant")
         self.report = IntelligenceReport.objects.create(fullReport="Report 1")
 
     def test_create_access_log(self):
