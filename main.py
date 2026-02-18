@@ -4,6 +4,7 @@ from spacy.pipeline import EntityRuler
 from spacy.util import filter_spans
 from spacy.language import Language
 from spacy.tokens import Span
+from data_processing.event_extractor import extract_events_from_text
 
 
 
@@ -184,7 +185,7 @@ def main():
     nlp.add_pipe("regex_entities", last=True)
 
 
-    with open("logs.txt", "r", encoding="utf-8") as f:
+    with open("Logs.txt", "r", encoding="utf-8") as f:
         text = f.read()
 
     doc = nlp(text)
@@ -201,6 +202,7 @@ def main():
     for ent in doc.ents:
         if ent.label_ in KEEP:
             print(f"{ent.text} | {ent.label_}")
+
 
 
 if __name__ == "__main__":
