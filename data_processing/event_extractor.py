@@ -16,6 +16,7 @@ Schema:
       "datetime_start": "ISO-8601 string or null",
       "datetime_end": "ISO-8601 string or null",
       "location": "string or null",
+      "home_address": "string or null",
       "people": ["string"],
       "organizations": ["string"],
       "vehicles": ["string"],
