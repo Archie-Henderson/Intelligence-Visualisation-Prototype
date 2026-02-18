@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Data Processing Personal Workspace Page</title>
+    </head>
+
+    <body>
+        <div class="container-fluid">
+            <div class="row">
+            <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+            <div class="sidebar-sticky">
+                <div class="sidebar p-3 bg-light">
+                    Here are the projects, {{ user.username }}.
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+            <h1>Welcome to Your Personal Workspace, {{ user.username }}.</h1>
+            <a href="/data_processing/upload/">Upload</a><br />
+        </main>
+
+    </body>
+</html>

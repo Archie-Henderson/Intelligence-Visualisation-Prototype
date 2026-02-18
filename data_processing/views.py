@@ -1,13 +1,15 @@
 from django.shortcuts import render, redirect
 from django.core.files.storage import FileSystemStorage
 from .forms import UserForm
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 
 # Create your views here.
 
 def index(request):
     context_dict = {}
-    return render(request, 'index.html', context=context_dict)
+    return render(request, 'web_page/index.html', context=context_dict)
 
 def upload(request):
 
@@ -17,7 +19,7 @@ def upload(request):
         fs = FileSystemStorage()
         fs.save(f.name, f)
 
-    return render(request, 'upload.html')
+    return render(request, 'web_page/upload.html')
 
 def register(request):
     if request.method == 'POST':
@@ -29,7 +31,7 @@ def register(request):
     else:
         form = UserForm()
 
-    return render(request, 'register.html', {'form': form})
+    return render(request, 'web_page/register.html', {'form': form})
 
 def login_view(request):
     if request.method == 'POST':
@@ -40,6 +42,11 @@ def login_view(request):
         )
         if user:
             login(request, user)
-            return redirect('index')
+            return redirect(reverse('data_processing:index'))
         
-    return render(request, 'login.html')
+    return render(request, 'web_page/login.html')
+
+@login_required
+def user_logout(request):
+    logout(request)
+    return redirect(reverse('data_processing:index'))

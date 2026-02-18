@@ -1,0 +1,58 @@
+:root{
+    --sidebar-w: 240px;
+    /* width of the sidebar button */ 
+    --toggle-w: 40px;
+    --toggle-top: 16px;
+    --toggle--left-gap: 10px;
+}
+
+.layout{
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar{
+    width: var(--sidebar-w);
+    transition: transform 0.25s ease;
+    position: relative;
+    will-change: transform;
+}
+
+/* collapse the sidebar */
+.sidebar.collapsed{
+    transform: translateX(calc(-1 * var(--sidebar-w) - var(--toggle-w) - var(--toggle--left-gap)));
+}
+
+.main{
+    flex: 1;
+    min-width: 0;
+}
+
+.sidebar-header{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+}
+
+.sidebar-toggle{
+    position: fixed;
+    top: var(--toggle-top);
+    left: calc(var(--toggle--left-gap) + var(--sidebar-w) - var(--toggle-w));
+    width: var(--toggle-w);
+    height: var(--toggle-w);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background: #fff;
+    border-radius: 10px;
+    z-index: 1100;
+    transition: left 0.25s ease;
+}
+
+/* put the button on the left side of the page */
+.sidebar.collapsed .sidebar-toggle{
+    left: var(--toggle--left-gap);
+}
+
+.sidebar.collapsed .sidebar-title{
+    display: none;
+}

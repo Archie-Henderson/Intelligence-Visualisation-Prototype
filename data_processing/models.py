@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.conf import settings
 
 # Create your models here.
 
@@ -121,3 +122,4 @@ class AccessLog(models.Model):
     def __str__(self):
         return f"{self.actionTime} {self.actionType} {self.user} {self.report}"
     
+# project created by user
