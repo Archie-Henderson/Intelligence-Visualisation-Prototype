@@ -105,27 +105,77 @@ def extract_events_from_block(doc) -> List[Dict[str, Any]]:
             trigger_text = m.group(0)
             trigger_abs_start = sent_start + m.start()
 
-            subject = last_person_before(sent_ents, trigger_abs_start) or block_last_person
+            # assign suspect first
+            suspect = last_person_before(sent_ents, trigger_abs_start) or block_last_person
+            # find DOB associated with the suspect (in same block)
+            suspect_dob = None
 
+            if suspect:
+                # find the PERSON entity matching the suspect
+                suspect_ents = [
+                    e for e in block_ents
+                    if e.label_ == "PERSON" and e.text.strip() == suspect
+                ]
+
+                if suspect_ents:
+                    suspect_ent = suspect_ents[0]
+                    suspect_end = suspect_ent.end_char
+
+                    # find DOB entities that appear after this PERSON
+                    dob_candidates = [
+                        e for e in block_ents
+                        if e.label_ == "DOB" and e.start_char >= suspect_end
+                    ]
+
+                    if dob_candidates:
+                        dob_candidates.sort(key=lambda e: e.start_char)
+                        suspect_dob = dob_candidates[0].text
+
+            #find home address after the suspect
+            suspect_home_addr = None
+            if suspect:
+                # Find person entities whose text matches the suspect
+                suspect_ents = [
+                    e for e in block_ents
+                    if e.label_ == "PERSON" and e.text.strip() == suspect
+                ]
+                if suspect_ents:
+                    # earliest end position of the suspect ent in this block
+                    suspect_end_pos = min(e.end_char for e in suspect_ents)
+
+                    # find ADDRESS entities that come after the suspect in the text
+                    addr_ents = [
+                        e for e in block_ents
+                        if e.label_ == "ADDRESS" and e.start_char >= suspect_end_pos
+                    ]
+
+                    # Pick the nearest one after the suspect
+                    if addr_ents:
+                        addr_ents.sort(key=lambda e: e.start_char)
+                        suspect_home_addr = addr_ents[0].text
+
+            # Extract date/time
             date_ents = [e.text for e in sent_ents if e.label_ == "DATE"]
             time_ents = [e.text for e in sent_ents if e.label_ == "TIME"]
-            location = _pick_texts(block_ents, sent_ents, {"GPE", "LOC", "FAC"}, limit=1)
-            home_addr = _pick_texts(block_ents, sent_ents, {"ADDRESS"}, limit=1)
 
+            # extract other fields
+            location = _pick_texts(block_ents, sent_ents, {"GPE", "LOC", "FAC"}, limit=1)
             vehicle = _pick_texts(block_ents, sent_ents, {"VEHICLE"}, limit=2)
             reg_plate = _pick_texts(block_ents, sent_ents, {"VEHICLE_REG"}, limit=2)
             gang = _pick_texts(block_ents, sent_ents, {"CRIME_GROUP", "ORG"}, limit=2)
             drugs = _pick_texts(block_ents, sent_ents, {"DRUG"}, limit=3)
             items = _pick_texts(block_ents, sent_ents, {"ITEM"}, limit=3)
 
+            # build event dict
             ev = {
                 "event_type": etype,
                 "trigger": trigger_text,
-                "subject": subject,
+                "suspect": suspect,
+                "suspect_dob": suspect_dob,
                 "date": date_ents[0] if date_ents else None,
                 "time": time_ents[0] if time_ents else None,
                 "location": location[0] if location else None,
-                "home_address": home_addr[0] if home_addr else None,
+                "home_address": suspect_home_addr,
                 "vehicle": vehicle,
                 "reg_plate": reg_plate,
                 "gang": gang,
@@ -133,9 +183,9 @@ def extract_events_from_block(doc) -> List[Dict[str, Any]]:
                 "items": items,
                 "evidence_text": sent_text.strip(),
             }
-
+            # score and filter
             score = 0
-            if ev["subject"]: score += 1
+            if ev["suspect"]: score += 1
             if ev["date"]: score += 1
             if ev["time"]: score += 1
             if ev["location"]: score += 1
@@ -145,7 +195,7 @@ def extract_events_from_block(doc) -> List[Dict[str, Any]]:
             if score >= 2:
                 events.append(ev)
 
-            break  # 1 event per sentence
+            break  # stop after finding 1 event per sentence
 
     return events
 
@@ -159,8 +209,6 @@ def extract_events(text: str, nlp) -> List[Dict[str, Any]]:
             ev["block_id"] = i
         all_events.extend(evs)
     return all_events
-
-
 
 REG_VEHICLE_REG = re.compile(
     r"\bReg(?:istration)?\s*\.?\s*(?:No\.?|Number|#)?\s*[:\-]?\s*([A-Z0-9]{2,7})\b", re.I)
@@ -182,7 +230,6 @@ REG_BLOCK_PERSON = re.compile(
 )
 REG_ADDRESS = re.compile(r"(?m)^\s*(\d{1,4}\s+[A-Z][A-Za-z'\-]*(?:\s+[A-Z][A-Za-z'\-]*)*\s+(?:Road|Street|Drive|Avenue|Lane|Place|Crescent|Court|Terrace))\s*$")
 
-
 #Currently not sure what to do with uncertain info. (trustworthy score to be thought about later)
 REG_ALIAS = re.compile(
     r"\b(?P<uncertain>may\s+be|possibly|believed\s+to\s+be|thought\s+to\s+be|reported\s+to\s+be)?\s*"
@@ -192,23 +239,19 @@ REG_ALIAS = re.compile(
     re.I
 )
 
-
 @Language.component("regex_entities")
 def regex_entities(doc):
     new_ents = list(doc.ents)
     text = doc.text
 
-
     def remove_overlaps(start, end):
         nonlocal new_ents
         new_ents = [e for e in new_ents if not (e.start_char < end and start < e.end_char)]
-
 
     def add_span(start, end, label):
         span = doc.char_span(start, end, label=label, alignment_mode="contract")
         if span:
             new_ents.append(span)
-
 
     for m in REG_BLOCK_PERSON.finditer(text):
         start, end = m.start(1), m.end(2)
@@ -226,8 +269,6 @@ def regex_entities(doc):
         remove_overlaps(start, end)
         add_span(start, end, "CRIME_GROUP")
 
-
-
     for m in REG_DOB.finditer(text):
         start, end = m.start(1), m.end(1)
         remove_overlaps(start, end)
@@ -235,8 +276,6 @@ def regex_entities(doc):
         span = doc.char_span(start, end, label="DOB", alignment_mode="expand")
         if span:
             new_ents.append(span)
-
-
 
     for m in REG_POSTCODE.finditer(text):
         add_span(m.start(1), m.end(1), "POSTCODE")
@@ -252,13 +291,10 @@ def regex_entities(doc):
         label = "ALIAS_UNCERTAIN" if m.group("uncertain") else "ALIAS_CERTAIN"
         add_span(start, end, label)
 
-
     for m in REG_ADDRESS.finditer(text):
         start, end = m.start(1), m.end(1)
         remove_overlaps(start, end)
         add_span(start, end, "ADDRESS") 
-
-
 
     surname_set = set()
     for ent in new_ents:
@@ -269,8 +305,6 @@ def regex_entities(doc):
                 # keep only all-caps surnames
                 if surname.isupper() and surname.isalpha():
                     surname_set.add(surname)
-
-
 
     #!!currently overwriting org to person, etc, check needed just in case 
     cleaned = []
@@ -316,7 +350,6 @@ def build_entity_index(doc) -> dict:
 
     return idx
 
-
 def _count_fuzzy_matches(values, entity_set) -> int:
     """
     Count how many strings in 'values' loosely match anything in entity_set
@@ -333,7 +366,6 @@ def _count_fuzzy_matches(values, entity_set) -> int:
                 hits += 1
                 break
     return hits
-
 
 def score_llm_event_against_spacy(event: dict, ent_idx: dict) -> dict:
     """
@@ -387,7 +419,6 @@ def main():
     nlp = spacy.load("en_core_web_sm")
 
     ruler = nlp.add_pipe("entity_ruler", before="ner")
-
     #car
     COLORS = ["black","white","silver","grey","gray","red","blue","yellow","green"]
     GENERIC_VEHICLES = ["car","vehicle","van","truck","lorry","motorbike","motorcycle","scooter","bike"]
@@ -395,7 +426,6 @@ def main():
 
     #DRUGS
     DRUGS = ["heroin", "cocaine", "ketamine", "cannabis", "ecstasy", "mdma"]
-
 
     #Custom entity patterns
     ruler.add_patterns([
@@ -426,9 +456,7 @@ def main():
 
     ])
 
-
     nlp.add_pipe("regex_entities", last=True)
-
 
     with open("Logs.txt", "r", encoding="utf-8") as f:
         text = f.read()
@@ -448,9 +476,7 @@ def main():
         if ent.label_ in KEEP:
             print(f"{ent.text} | {ent.label_}")
 
-
-
-    # EVENT EXTRACTION (Variant A) 
+    # EVENT EXTRACTION
     events = extract_events(text, nlp)
     print("\n" + "=" * 60)
     print("EVENTS (JSON)")
@@ -463,14 +489,16 @@ def main():
         print(f"  date:      {ev.get('date')}")
         print(f"  time:      {ev.get('time')}")
         print(f"  location:  {ev.get('location')}")
-        print(f"  subject:   {ev.get('subject')}")
+        print(f"  suspect:   {ev.get('suspect')}")
+        print(f"  suspect_dob: {ev.get('suspect_dob')}")
+        print(f"  home_address: {ev.get('home_address')}")
         print()
 
-    # save to file (optional)
+    # save to file
     with open("events.json", "w", encoding="utf-8") as f:
         json.dump(events, f, indent=2, ensure_ascii=False)
 
-            # LLM-BASED EVENT EXTRACTION (Variant B)
+            # LLM-BASED EVENT EXTRACTION
     print("\n" + "=" * 60)
     print("LLM EVENTS + ALIGNMENT WITH SPACY")
     print("=" * 60)
@@ -488,7 +516,7 @@ def main():
 
     print(f"\nLLM returned {len(llm_events)} events.\n")
 
-    # 2) Build spaCy entity index from the full doc
+    # build spaCy entity index from the full doc
     ent_idx = build_entity_index(doc)
 
     for i, ev in enumerate(llm_events, 1):
