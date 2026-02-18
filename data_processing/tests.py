@@ -89,7 +89,7 @@ class BasicDatabaseExistenceTests(TestCase):
         self.assertEqual(Entity.objects.count(), 1)
 
     def test_user_exists(self):
-        User.objects.create(name="Alice", rank="Constable")
+        User.objects.create(name="Alice", rank="Constable", policeID=1)
         self.assertTrue(User.objects.exists())
 
     def test_entity_intelligence_report_exists(self):
@@ -105,7 +105,7 @@ class BasicDatabaseExistenceTests(TestCase):
         self.assertEqual(EntityLink.objects.count(), 1)
 
     def test_access_log_exists(self):
-        u = User.objects.create(name="Bob", rank="Sergeant")
+        u = User.objects.create(name="Bob", rank="Sergeant", policeID=2)
         r = IntelligenceReport.objects.create(fullReport="Report")
         AccessLog.objects.create(user=u, report=r, actionType="view")
         self.assertTrue(AccessLog.objects.exists())
@@ -148,8 +148,8 @@ class EntityModelTests(TestCase):
 
 class UserModelTests(TestCase):
     def test_create_user_valid_rank(self):
-        u = User.objects.create(name="Alice", rank="Constable")
-        self.assertIsNotNone(u.userID)
+        u = User.objects.create(name="Alice", rank="Constable", policeID=3)
+        self.assertIsNotNone(u.policeID)
         self.assertEqual(u.rank, "Constable")
         self.assertEqual(u.rank_level, 1)
 
@@ -159,11 +159,11 @@ class UserModelTests(TestCase):
             u.full_clean()
 
     def test_rank_level_property(self):
-        u = User.objects.create(name="Carol", rank="Commissioner")
+        u = User.objects.create(name="Carol", rank="Commissioner", policeID=4)
         self.assertEqual(u.rank_level, 11)
 
     def test_user_str(self):
-        u = User.objects.create(name="Dave", rank="Inspector")
+        u = User.objects.create(name="Dave", rank="Inspector", policeID=5)
         self.assertIn("Dave", str(u))
         self.assertIn("Inspector", str(u))
 
@@ -252,7 +252,7 @@ class EntityLinkModelTests(TestCase):
 
 class AccessLogModelTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create(name="Alice", rank="Sergeant")
+        self.user = User.objects.create(name="Alice", rank="Sergeant", policeID=6)
         self.report = IntelligenceReport.objects.create(fullReport="Report 1")
 
     def test_create_access_log(self):

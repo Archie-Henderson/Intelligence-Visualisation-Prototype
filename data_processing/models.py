@@ -55,13 +55,14 @@ class User(AbstractUser):
     RANK_ORDER = {name: level for (name, display, level) in RANK_DATA}
 
     isManager = models.BooleanField(default= False)
-    policeID = models.CharField(max_length= 50, unique= True, blank=True)
+    policeID = models.CharField(max_length= 50, primary_key= True)
     rank = models.CharField(max_length=50, choices=RANKS, blank=True)
+    name = models.CharField(max_length=50)
 
     def __str__(self):
         if self.rank:
-            return f"{self.username} ({self.rank})"
-        return self.username
+            return f"{self.name} ({self.rank})"
+        return self.name
 
     @property
     def rank_level(self):
