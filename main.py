@@ -5,6 +5,161 @@ from spacy.util import filter_spans
 from spacy.language import Language
 from spacy.tokens import Span
 
+import json
+from typing import List, Dict, Any, Optional, Set
+
+# SIMPLE EVENT EXTRACTION (Variant A)
+# Works like: NER (spaCy + your rulers/regex) + trigger patterns + nearest-entity arguments.
+
+EVENT_TRIGGERS = {
+    "DRUG_DEALING": [
+        r"\bdeal(?:ing)?\b",
+        r"\bsell(?:ing)?\b",
+        r"\bsupp(?:ly|lying)\b",
+        r"\bhand(?:ing)?\s+packages?\b",
+        r"\bwraps?\b",
+    ],
+    "ASSAULT": [
+        r"\bassault(?:ed)?\b",
+        r"\battack(?:ed)?\b",
+        r"\bstabb(?:ed|ing)\b",
+        r"\bpunch(?:ed|ing)\b",
+        r"\bhit\b",
+    ],
+    "WEAPON_POSSESSION": [
+        r"\bknife\b",
+        r"\bmachete\b",
+        r"\bfirearm\b",
+        r"\bgun\b",
+        r"\bweapon\b",
+        r"\bpossession\b",
+    ],
+    "VEHICLE_SIGHTING": [
+        r"\bseen\b",
+        r"\bobserved\b",
+        r"\bdriving\b",
+        r"\bvehicle\b",
+        r"\breg(?:istration)?\b",
+        r"\bplate\b",
+    ],
+    "PRISON_RELEASE": [
+        r"\breleased\s+on\s+licen[cs]e\b",
+        r"\breleased\s+from\s+prison\b",
+    ],
+    "ASSOCIATION": [
+        r"\bassociat(?:ing|ed)\s+with\b",
+        r"\bseen\s+with\b",
+        r"\bmeeting\b",
+    ],
+}
+
+def split_into_blocks(text: str) -> List[str]:
+    """Split the input into blocks using blank lines (simple but effective for police logs)."""
+    blocks = [b.strip() for b in re.split(r"\n\s*\n+", text) if b.strip()]
+    return blocks
+
+def ents_in_span(doc, start_char: int, end_char: int, labels: Optional[Set[str]] = None):
+    out = []
+    for e in doc.ents:
+        if e.start_char >= start_char and e.end_char <= end_char:
+            if labels is None or e.label_ in labels:
+                out.append(e)
+    return out
+
+def last_person_before(ents, trigger_abs_start: int) -> Optional[str]:
+    persons = [e for e in ents if e.label_ == "PERSON" and e.end_char <= trigger_abs_start]
+    return persons[-1].text if persons else None
+
+def _pick_texts(block_ents, sent_ents, labels: Set[str], limit: int = 2) -> List[str]:
+    """Pick entity texts: first from the sentence; if empty, from the whole block."""
+    s = [e.text for e in sent_ents if e.label_ in labels]
+    if s:
+        return s[:limit]
+    b = [e.text for e in block_ents if e.label_ in labels]
+    return b[:limit]
+
+def extract_events_from_block(doc) -> List[Dict[str, Any]]:
+    """Extract events from a single spaCy Doc (one block)."""
+    events: List[Dict[str, Any]] = []
+    block_ents = list(doc.ents)
+    block_persons = [e.text for e in block_ents if e.label_ == "PERSON"]
+    block_last_person = block_persons[-1] if block_persons else None
+
+    compiled = []
+    for etype, patterns in EVENT_TRIGGERS.items():
+        for p in patterns:
+            compiled.append((etype, re.compile(p, re.I)))
+
+    for sent in doc.sents:
+        sent_text = sent.text
+        sent_start = sent.start_char
+        sent_end = sent.end_char
+        sent_ents = ents_in_span(doc, sent_start, sent_end)
+
+        for etype, creg in compiled:
+            m = creg.search(sent_text)
+            if not m:
+                continue
+
+            trigger_text = m.group(0)
+            trigger_abs_start = sent_start + m.start()
+
+            subject = last_person_before(sent_ents, trigger_abs_start) or block_last_person
+
+            date = _pick_texts(block_ents, sent_ents, {"DATE"}, limit=1)
+            time = _pick_texts(block_ents, sent_ents, {"TIME"}, limit=1)
+            location = _pick_texts(block_ents, sent_ents, {"GPE", "LOC", "FAC"}, limit=1)
+
+            vehicle = _pick_texts(block_ents, sent_ents, {"VEHICLE"}, limit=2)
+            reg_plate = _pick_texts(block_ents, sent_ents, {"VEHICLE_REG"}, limit=2)
+
+            gang = _pick_texts(block_ents, sent_ents, {"CRIME_GROUP", "ORG"}, limit=2)
+            drugs = _pick_texts(block_ents, sent_ents, {"DRUG"}, limit=3)
+            items = _pick_texts(block_ents, sent_ents, {"ITEM"}, limit=3)
+
+            ev = {
+                "event_type": etype,
+                "trigger": trigger_text,
+                "subject": subject,
+                "date": date[0] if date else None,
+                "time": time[0] if time else None,
+                "location": location[0] if location else None,
+                "vehicle": vehicle,
+                "reg_plate": reg_plate,
+                "gang": gang,
+                "drugs": drugs,
+                "items": items,
+                "evidence_text": sent_text.strip(),
+            }
+
+            score = 0
+            if ev["subject"]: score += 1
+            if ev["date"]: score += 1
+            if ev["time"]: score += 1
+            if ev["location"]: score += 1
+            if ev["vehicle"]: score += 1
+            if ev["reg_plate"]: score += 1
+            if ev["gang"]: score += 1
+            if score >= 2:
+                events.append(ev)
+
+            break  # 1 event per sentence
+
+    return events
+
+def extract_events(text: str, nlp) -> List[Dict[str, Any]]:
+    """Full pass: split text into blocks -> run nlp -> extract events."""
+    all_events: List[Dict[str, Any]] = []
+    for i, block in enumerate(split_into_blocks(text)):
+        doc = nlp(block)
+        evs = extract_events_from_block(doc)
+        for ev in evs:
+            ev["block_id"] = i
+        all_events.extend(evs)
+    return all_events
+#
+
+
 
 
 REG_VEHICLE_REG = re.compile(
@@ -202,6 +357,17 @@ def main():
         if ent.label_ in KEEP:
             print(f"{ent.text} | {ent.label_}")
 
+
+
+    # EVENT EXTRACTION (Variant A) 
+    events = extract_events(text, nlp)
+    print("\n" + "=" * 60)
+    print("EVENTS (JSON)")
+    print(json.dumps(events, indent=2))
+
+    # save to file (optional)
+    with open("events.json", "w", encoding="utf-8") as f:
+        json.dump(events, f, indent=2, ensure_ascii=False)
 
 if __name__ == "__main__":
     main()
