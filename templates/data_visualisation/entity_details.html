@@ -1,22 +1,97 @@
 <!DOCTYPE html>
-<body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entity Details</title>
+</head>
 
-    <div id="reports">
-        <h3>Reports mentioning {{ entity.name }}</h3>
-        <ul>
-            {% for report in reports %}
-                <li>Report {{ report.reportID }}</li>
-            {% endfor %}
-        </ul>
-    </div>
+<body style="margin:0; font-family: Arial, sans-serif; background:#f2f2f2;">
 
-    <div id="connections">
-        <h3>Entities related to {{ entity.name }}</h3>
-        <ul>
-            {% for link in links %}
-                <li>{{ link.other_ent.name }} connected through report {{ link.report.reportID }}</li>
-            {% endfor %}
-        </ul>
-    </div>
+<a href="{% url 'data_visualisation:graph' %}" style="
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    padding: 10px 14px;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+">
+    ← Return to Graph
+</a>
+
+<div style="max-width: 1000px; margin: 70px auto 30px auto; padding: 0 20px;">
+
+    <h2>Entity: {{ entity.name }}</h2>
+
+    <h3>Reports mentioning {{ entity.name }}</h3>
+
+    {% if links %}
+
+        {% for link in links %}
+
+            {% ifchanged link.report.reportID %}
+
+                {% if not forloop.first %}
+                    </ul>
+                    </div>
+                {% endif %}
+
+                <div style="
+                    background: white;
+                    padding: 18px 20px;
+                    margin-bottom: 18px;
+                    border-radius: 6px;
+                    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+                ">
+
+                    <h4>Report {{ link.report.reportID }}</h4>
+
+                    <div style="
+                        background:#f8f9fa;
+                        border-left: 4px solid #007bff;
+                        padding: 10px 12px;
+                        margin-bottom: 10px;
+                        font-size: 14px;
+                        line-height: 1.5;
+                        white-space: pre-wrap;
+                    ">
+                        {{ link.report.fullReport }}
+                    </div>
+
+                    <p><strong>Trustworthiness Level:</strong> <span style="color:#007bff;">1</span></p>
+
+                    <strong>Associated Entities:</strong>
+                    <ul style="margin: 6px 0 0 20px;">
+
+            {% endifchanged %}
+
+                        <li>
+                            {% if link.other_ent.name %}
+                                <a href="{% url 'data_visualisation:ent_details' link.other_ent.entityID %}"
+                                   style="text-decoration:none; color:#007bff;">
+                                    {{ link.other_ent.name }}
+                                </a>
+                            {% else %}
+                                <a href="{% url 'data_visualisation:ent_details' link.other_ent %}"
+                                   style="text-decoration:none; color:#007bff;">
+                                    Entity {{ link.other_ent }}
+                                </a>
+                            {% endif %}
+                        </li>
+
+            {% if forloop.last %}
+                    </ul>
+                </div>
+            {% endif %}
+
+        {% endfor %}
+
+    {% else %}
+        <p>No linked reports found.</p>
+    {% endif %}
+
+</div>
 
 </body>
