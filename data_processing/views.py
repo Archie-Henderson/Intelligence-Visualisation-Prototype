@@ -4,6 +4,8 @@ from .forms import UserForm
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+from .models import IntelligenceReport
+from .spacy_event_pipeline import extract_and_store_spacy_for_report
 
 # Create your views here.
 
@@ -16,8 +18,24 @@ def upload(request):
     if request.method == "POST" and request.FILES.get("file"):
         f = request.FILES["file"]
 
+        #read as text
+        raw = f.read()
+
+        f.seek(0)
         fs = FileSystemStorage()
         fs.save(f.name, f)
+        
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            text = raw.decode("utf-8", errors="replace") 
+
+        #save as report
+        report = IntelligenceReport.objects.create(fullReport=text)
+
+        # spacy
+        result = extract_and_store_spacy_for_report(report.reportID)
+        return render(request, "web_page/upload.html", {"result": result})
 
     return render(request, 'web_page/upload.html')
 

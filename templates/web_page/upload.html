@@ -14,6 +14,19 @@
         </form>
 
         {% if msg %}<p>{{ msg }}</p>{% endif %}
-        
+        {% if result %}
+        <h3>Extraction result</h3>
+
+        <p><b>Report:</b> {{ result.report_id }}</p>
+        <p><b>Rule events found:</b> {{ result.rule_events_found }}</p>
+
+        <h4>Entities</h4>
+        <ul>
+            <li>People: {{ result.entity_counts.people }}</li>
+            <li>Vehicle: {{ result.entity_counts.vehicle }}</li>
+            <li>Telecom: {{ result.entity_counts.telecom }}</li>
+            <li>Location: {{ result.entity_counts.location }}</li>
+        </ul>
+        {% endif %}
     </body>
 </html>
