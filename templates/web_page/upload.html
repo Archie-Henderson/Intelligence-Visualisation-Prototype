@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Data Processing Upload Page</title>
+    </head>
+
+    <body>
+        <h1>Upload File</h1>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="file" required>
+            <button type="submit">Upload</button>
+        </form>
+
+        {% if msg %}<p>{{ msg }}</p>{% endif %}
+        {% if result %}
+        <h3>Extraction result</h3>
+
+        <p><b>Report:</b> {{ result.report_id }}</p>
+        <p><b>Rule events found:</b> {{ result.rule_events_found }}</p>
+
+        <h4>Entities</h4>
+        <ul>
+            <li>People: {{ result.entity_counts.people }}</li>
+            <li>Vehicle: {{ result.entity_counts.vehicle }}</li>
+            <li>Telecom: {{ result.entity_counts.telecom }}</li>
+            <li>Location: {{ result.entity_counts.location }}</li>
+        </ul>
+        {% endif %}
+    </body>
+</html>

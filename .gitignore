@@ -113,3 +113,17 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Django migrations (except __init__.py)
+data_processing/migrations/*
+!data_processing/migrations/__init__.py
+
+__pycache__/
+*.pyc
+data_processing/migrations/
+media/
+where

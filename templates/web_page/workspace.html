@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Data Processing Personal Workspace Page</title>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+
+            <!-- SIDEBAR -->
+            <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+                <div class="sidebar-sticky">
+                    <div class="sidebar p-3 bg-light">
+                        Here are the projects, {{ user.username }}.
+                    </div>
+                </div>
+            </nav>
+
+            <!-- MAIN CONTENT -->
+            <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+
+                <h1>Welcome to Your Personal Workspace, {{ user.username }}.</h1>
+
+                <a href="/data_processing/upload/">Upload</a>
+                <hr>
+
+                {% if report %}
+                    <h2>Report {{ report.reportID }}</h2>
+
+                    <p style="white-space: pre-wrap;">{{ report.fullReport }}</p>
+
+                    <hr>
+                    <h3>Entities Linked To This Report</h3>
+
+                    {% for link in links %}
+                        {% with entity=link.entity %}
+                        <div style="border:1px solid #ccc; padding:15px; margin-bottom:15px; border-radius:8px;">
+
+                            <!-- ENTITY HEADER -->
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <strong>{{ entity.name }}</strong>
+                                    <span style="opacity:0.6;">({{ entity.type }})</span>
+                                </div>
+
+                                <!-- UNLINK BUTTON -->
+                                <form method="post"
+                                      action="{% url 'data_processing:unlink_entity_from_report' report.reportID entity.entityID %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit" style="color:red;">Unlink</button>
+                                </form>
+                            </div>
+
+                            <!-- EDIT ENTITY -->
+                            <details style="margin-top:10px;">
+                                <summary>Edit Name / Type</summary>
+
+                                <form method="post"
+                                      action="{% url 'data_processing:edit_entity' entity.entityID %}">
+                                    {% csrf_token %}
+
+                                    <label>Name:</label><br>
+                                    <input type="text" name="name" value="{{ entity.name }}" required><br><br>
+
+                                    <label>Type:</label><br>
+                                    <select name="type" required>
+                                        <option value="people" {% if entity.type == "people" %}selected{% endif %}>People</option>
+                                        <option value="vehicle" {% if entity.type == "vehicle" %}selected{% endif %}>Vehicle</option>
+                                        <option value="telecom" {% if entity.type == "telecom" %}selected{% endif %}>Telecom</option>
+                                        <option value="location" {% if entity.type == "location" %}selected{% endif %}>Location</option>
+                                    </select><br><br>
+
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit">Save</button>
+                                </form>
+                            </details>
+
+                            <!-- PROFILE BLOCK -->
+                            <details style="margin-top:10px;">
+                                <summary>Edit Profile Block</summary>
+
+                                <form method="post"
+                                      action="{% url 'data_processing:edit_entity_profile' entity.entityID %}">
+                                    {% csrf_token %}
+
+                                    <label>Age:</label><br>
+                                    <input type="number" name="age"
+                                           value="{{ entity.profile.age|default:'' }}"><br><br>
+
+                                    <label>Address:</label><br>
+                                    <textarea name="address" rows="2">{{ entity.profile.address|default:'' }}</textarea><br><br>
+
+                                    <label>Role:</label><br>
+                                    <input type="text" name="role"
+                                           value="{{ entity.profile.role|default:'' }}"><br><br>
+
+                                    <label>Notes:</label><br>
+                                    <textarea name="notes" rows="2">{{ entity.profile.notes|default:'' }}</textarea><br><br>
+
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit">Save Profile</button>
+                                </form>
+                            </details>
+
+                            <!-- SOFT DELETE ENTITY -->
+                            <form method="post"
+                                  action="{% url 'data_processing:soft_delete_entity' entity.entityID %}"
+                                  style="margin-top:10px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.path }}">
+                                <button type="submit" style="color:red;">Delete Entity</button>
+                            </form>
+
+                        </div>
+                        {% endwith %}
+                    {% empty %}
+                        <p>No entities linked to this report.</p>
+                    {% endfor %}
+
+                    <hr>
+
+                    <!-- ADD NEW ENTITY -->
+                    <h3>Add Missing Entity</h3>
+
+                    <form method="post"
+                          action="{% url 'data_processing:add_entity_to_report' report.reportID %}">
+                        {% csrf_token %}
+
+                        <label>Name:</label><br>
+                        <input type="text" name="name" required><br><br>
+
+                        <label>Type:</label><br>
+                        <select name="type" required>
+                            <option value="people">People</option>
+                            <option value="vehicle">Vehicle</option>
+                            <option value="telecom">Telecom</option>
+                            <option value="location">Location</option>
+                        </select><br><br>
+
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <button type="submit">Add Entity</button>
+                    </form>
+
+                {% else %}
+                    <p>No report selected yet.</p>
+                {% endif %}
+
+            </main>
+        </div>
+    </div>
+</body>
+</html>
