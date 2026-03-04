@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+</head>
+
+<body>
+
+<!-- Flex container -->
+<div style="display: flex; height: 100vh;">
+
+<!--sidebar-->
+<div id="sidebar" style="
+  width: 250px;
+  background-color: #f5f5f5;
+  padding: 15px;
+  overflow-y: auto;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+">
+
+  <h2>Sidebar</h2>
+
+  <!-- Filter Button -->
+  <button id="filterBtn" style="
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+  ">
+      Filters
+  </button>
+
+  <!-- Filter Dropdown -->
+  <form role="form" method="post" action=".">
+    <div class="form-group" id="filterPanel" style="
+        display: none;
+        background: #ffffff;
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 15px;
+    ">
+        {% csrf_token %}
+        <label for="form_behaviour">Filter Graph:</label>
+        <input type="checkbox" class="form-control" name="form_behaviour" id="form_behaviour">
+        <br>
+
+        <label for="node_id">Entity ID:</label>
+        <input class="form-control" name="node_id" type="number" id="node_id" style="width: 100%; margin-bottom: 8px;">
+
+        <label>Entity Type:</label>
+        <select class="form-control" name="entity_type" id="entity_type" style="width: 100%; margin-bottom: 8px;">
+            <option value="">Any</option>
+            <option value="person">Person</option>
+            <option value="organisation">Organisation</option>
+            <option value="location">Location</option>
+            <option value="telecom">Telecom</option>
+            <option value="vehicle">Vehicle</option>
+        </select>
+
+        <label>Entity Name Includes:</label>
+        <input class="form-control" name="entity_name" type="text" id="entity_name" style="width: 100%; margin-bottom: 8px;">
+
+        <label>Report ID:</label>
+        <input class="form-control" name="report_id" type="number" id="report_id" style="width: 100%; margin-bottom: 8px;">
+
+        <label>Created After:</label>
+        <input class="form-control" name="creation_date_start" type="datetime-local" id="creation_date_start" style="width: 100%; margin-bottom: 8px;">
+
+        <label>Created Before:</label>
+        <input class="form-control" name="creation_date_end" type="datetime-local" id="creation_date_end" style="width: 100%; margin-bottom: 12px;">
+
+        <button type="submit" class="btn btn-primary" id="applyFilters" style="
+            width: 100%;
+            padding: 8px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        ">
+            Apply Filters
+        </button>
+    </div>
+  </form>
+
+  <h3>Linked Entities:</h3>
+  <ul>
+    <script>console.log("{{linked}}")</script>
+    {% for ent in linked %}
+      <li data-id="{{ ent.entityID }}" style="cursor: pointer;">{{ ent.name }}</li>
+    {% endfor %}
+  </ul>
+  <h3>Unlinked Entities</h3>
+  <ul>
+    {% for ent in unlinked %}
+      <li data-id="{{ ent.entityID }}" style="cursor: pointer;">{{ ent.name }}</li>
+    {% endfor %}
+  </ul>
+</div>
+  
+<div id="network_graph" style="flex-grow: 1;" class="svg-container"></div>
+
+</div>
+
+<script>
+
+// set the dimensions and margins of the graph
+const margin = {
+    top: window.innerHeight * 0.01,
+    right: window.innerWidth * 0.01,
+    bottom: window.innerHeight * 0.01,
+    left: window.innerWidth * 0.01
+};
+
+//Account for sidebar width
+const sidebarWidth = 250;
+const width = window.innerWidth - sidebarWidth - margin.left - margin.right;
+const height = window.innerHeight - margin.top - margin.bottom;
+
+// append the svg object to the body of the page
+const svg = d3.select("#network_graph")
+  .append("svg")
+    .attr("viewBox", "0 0 " + d3.max([width,height]) + " " + d3.max([width,height]))
+    .attr("preserveAspectRatio", "xMinYMin meet")
+    .classed("svg-content-responsive", true)
+  .call(d3.zoom().on("zoom", function () {
+       svg.attr("transform", d3.event.transform)
+    }))
+  .append("g")
+    .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+
+d3.json("/static/graph_data.json", function(data) {
+
+    // Initialize the links
+  var links = svg
+    .selectAll("line")
+    .data(data.links)
+    .enter()
+    .append("line")
+      .style("stroke", "#aaa")
+      
+  // Initialize the nodes
+  var nodes = svg
+    .selectAll("circle")
+    .data(data.nodes)
+    .enter()
+    .append("circle")
+      .attr("id", function(d){return "ent"+d.id})
+      .attr("r", 8)
+      .style("fill", "#69b3a2")
+      .on('click', function(d){window.location.href = window.location.href + 'entities/' + d.id})
+
+  nodes.append("title")
+  .text(d => d.name);
+
+  nodes
+    .on('mouseover', function(d){
+      var connected_nodes = [];
+      d3.select(this).style('fill', '#A10A0A');
+      links
+      .style('stroke', function (link_d) {
+        if (link_d.source.id === d.id) {
+          connected_nodes.push("#ent"+link_d.target.id)
+        }
+        else if (link_d.target.id === d.id) {
+          connected_nodes.push("#ent"+link_d.source.id)
+        }
+        else {
+          d3.select("#ent"+link_d.source.id).style('opacity', 0.5);
+          d3.select("#ent"+link_d.target.id).style('opacity', 0.5);
+          d3.select(this).style('opacity', 0.5)
+        }
+          
+        return link_d.source.id === d.id || link_d.target.id === d.id ? 'black' : '#d9d7d7';})
+      .style('stroke-width', function (link_d) {return link_d.source.id === d.id || link_d.target.id === d.id ? 2 : 1;});
+      for (let i = 0; i<connected_nodes.length; i++){
+        d3.select(connected_nodes[i])
+          .style('opacity', 1)
+          .style('fill', '#A10A0A')
+      }
+    })
+    .on('mouseout', function(d){
+      nodes
+      .style("fill", "#69b3a2")
+      .style('opacity', 1)
+      links
+      .style("stroke", "#aaa")
+      .style("stroke-width", "1")
+      .style('opacity', 1)
+    });
+
+  var text = svg
+    .selectAll('text')
+    .data(data.nodes)
+    .enter()
+    .append('text')
+    .text(nodes => nodes.name)
+    .attr('font-size', 8)
+    .attr('dx', 5)
+    .attr('dy', -5)
+
+  // List forces to apply
+  const simulation = d3.forceSimulation(data.nodes)
+      .force("link", d3.forceLink()
+            .id(function(d) { return d.id; })
+            .links(data.links)
+            .strength(2)
+      )
+      .force("charge", d3.forceManyBody().strength(-200))
+      .force("x", d3.forceX(width/2))
+      .force("y", d3.forceY(height/2))
+
+  // Update nodes positions
+  simulation.nodes(data.nodes).on('tick', () => {
+    links
+        .attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+
+    nodes
+         .attr("cx", function(d) { return d.x; })
+         .attr("cy", function(d) { return d.y; });
+
+    text
+         .attr("dx", function(d) { return d.x+3; })
+         .attr("dy", function(d) { return d.y-3; });
+  })
+
+  const dragDrop = d3.drag()
+    .on('start', nodes => {
+      nodes.fx = nodes.x
+      nodes.fy = nodes.y
+    })
+    .on('drag', nodes => {
+      simulation.alphaTarget(0.7).restart()
+      nodes.fx = d3.event.x
+      nodes.fy = d3.event.y
+    })
+    .on('end', nodes => {
+      if (!d3.event.active) {
+        simulation.alphaTarget(0)
+      }
+      nodes.fx = null
+      nodes.fy = null
+    });
+
+  nodes.call(dragDrop);
+
+  //Sidebar interaction
+    document.querySelectorAll("#sidebar li[data-id]").forEach(function(li){
+      li.addEventListener("click", function(){
+          const entityId = this.getAttribute("data-id");
+          const targetNode = d3.select(entityId);
+
+          nodes.style("fill", "#69b3a2").attr("r", 8);
+
+          targetNode.style("fill", "#ff0000").attr("r", 14);
+      });
+  });
+  
+});
+
+// Filter panel toggle
+document.getElementById("filterBtn").addEventListener("click", function () {
+    const panel = document.getElementById("filterPanel");
+    panel.style.display = panel.style.display === "none" ? "block" : "none";
+});
+
+// Filter button click (frontend only for now)
+document.getElementById("applyFilters").addEventListener("click", function () {
+    const filters = {
+        node_id: document.getElementById("filter_node_id").value,
+        entity_type: document.getElementById("filter_entity_type").value,
+        entity_name: document.getElementById("filter_entity_name").value,
+        report_id: document.getElementById("filter_report_id").value,
+        creation_date_start: document.getElementById("filter_date_start").value,
+        creation_date_end: document.getElementById("filter_date_end").value
+    };
+
+    console.log("Filters selected:", filters);
+    alert("Filters captured. Backend wiring next.");
+});
+</script>
+</body>
