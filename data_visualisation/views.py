@@ -66,10 +66,6 @@ def graph_view(request):
 
     return render(request, 'data_visualisation/graph.html', context = context)
 
-def get_report_entities(report_id):
-    ents = set()
-
-
 def walk_tree(ent_id):
     nodes = [Entity.objects.get(entityID = ent_id)]
     discovered_nodes = {Entity.objects.get(entityID = ent_id).entityID}
