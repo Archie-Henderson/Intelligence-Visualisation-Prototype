@@ -43,16 +43,16 @@ class GraphViewTests(TestCase):
         self.assertEqual(len(response.context['unlinked']), 0)
 
     def test_linked_and_unlinked_entities(self):
-        e1 = Entity.objects.create(name="Entity 1", type="ADDRESS")
-        e2 = Entity.objects.create(name="Entity 2", type="VEHICLE")
-        e3 = Entity.objects.create(name="Entity 3", type="NAME")
+        e3 = Entity.objects.create(name="Entity 3", type=Entity.PEOPLE)
+        e1 = Entity.objects.create(name="Entity 1", type=Entity.LOCATION)
+        e2 = Entity.objects.create(name="Entity 2", type=Entity.VEHICLE)
 
         report = IntelligenceReport.objects.create(fullReport="Test Report")
 
         EntityLink.objects.create(
-            entity_1=e1,
-            entity_2=e2,
-            intelligence_report=report,
+            entity1=e1,
+            entity2=e2,
+            reportLink=report,
         )
 
         response = self.client.get(reverse('data_visualisation:graph'))
@@ -66,8 +66,8 @@ class GraphViewTests(TestCase):
 class EntityDetailsTests(TestCase):
     
     def setUp(self):
-        self.entity1 = Entity.objects.create(name="Alice", type="NAME")
-        self.entity2 = Entity.objects.create(name="Car", type="VEHICLE")
+        self.entity1 = Entity.objects.create(name="Alice", type=Entity.PEOPLE)
+        self.entity2 = Entity.objects.create(name="Car", type=Entity.VEHICLE)
 
         self.report1 = IntelligenceReport.objects.create(fullReport="Report 1")
         self.report2 = IntelligenceReport.objects.create(fullReport="Report 2")
@@ -78,9 +78,9 @@ class EntityDetailsTests(TestCase):
         )
 
         EntityLink.objects.create(
-            entity_1=self.entity1,
-            entity_2=self.entity2,
-            intelligence_report=self.report2
+            entity1=self.entity1,
+            entity2=self.entity2,
+            reportLink=self.report2
         )
 
     def test_entity_details_page_loads(self):
@@ -97,7 +97,7 @@ class EntityDetailsTests(TestCase):
         self.assertContains(response, f"connected through report {self.report2.reportID}")
 
     def test_entity_with_no_links(self):
-        entity3 = Entity.objects.create(name="Bob", type="NAME")
+        entity3 = Entity.objects.create(name="Bob", type=Entity.PEOPLE)
         response = self.client.get(reverse('data_visualisation:ent_details', args=[entity3.entityID]))
         self.assertEqual(response.status_code, 200)
 

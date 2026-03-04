@@ -1,5 +1,3 @@
-
-from django.test import TestCase
 from __future__ import annotations
 
 from unittest import skipUnless

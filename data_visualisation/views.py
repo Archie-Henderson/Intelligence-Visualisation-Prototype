@@ -68,7 +68,7 @@ def graph_view(request):
 
 def add_context(ents, filtering, context):
     for ent in ents:
-            if (not filtering) and EntityLink.objects.filter(entity_1 = ent).count() +  EntityLink.objects.filter(entity_2 = ent).count() == 0:
+            if (not filtering) and EntityLink.objects.filter(entity1 = ent).count() +  EntityLink.objects.filter(entity2 = ent).count() == 0:
                 context['unlinked'].append({'id':ent.entityID, 'name':ent.name})
             else:
                 context['linked'].append({'id':ent.entityID, 'name':ent.name})
@@ -76,12 +76,12 @@ def add_context(ents, filtering, context):
 
 def add_data(ents, filtering, links, data):
     for ent in ents:
-        if filtering or EntityLink.objects.filter(entity_1 = ent).count() +  EntityLink.objects.filter(entity_2 = ent).count() > 0:
+        if filtering or EntityLink.objects.filter(entity1 = ent).count() +  EntityLink.objects.filter(entity2 = ent).count() > 0:
             data['nodes'].append({'id':ent.entityID, 'name':ent.name})
 
     for link in links:
-        if link.entity_1 in ents and link.entity_2 in ents:
-            data['links'].append({'source':link.entity_1.entityID, 'target':link.entity_2.entityID})
+        if link.entity1 in ents and link.entity2 in ents:
+            data['links'].append({'source':link.entity1.entityID, 'target':link.entity2.entityID})
         
     return data
 
@@ -91,13 +91,13 @@ def walk_tree(ent_id):
 
     while len(nodes) > 0:
         node = nodes.pop()
-        for ent in EntityLink.objects.filter(entity_1 = node.entityID).union(EntityLink.objects.filter(entity_2 = node.entityID)):
-            if ent.entity_1.entityID not in discovered_nodes:
-                discovered_nodes.add(ent.entity_1.entityID)
-                nodes.append(ent.entity_1)
-            elif ent.entity_2.entityID not in discovered_nodes:
-                discovered_nodes.add(ent.entity_2.entityID)
-                nodes.append(ent.entity_2)
+        for ent in EntityLink.objects.filter(entity1 = node.entityID).union(EntityLink.objects.filter(entity2 = node.entityID)):
+            if ent.entity1.entityID not in discovered_nodes:
+                discovered_nodes.add(ent.entity1.entityID)
+                nodes.append(ent.entity1)
+            elif ent.entity2.entityID not in discovered_nodes:
+                discovered_nodes.add(ent.entity2.entityID)
+                nodes.append(ent.entity2)
 
     return discovered_nodes
             
@@ -110,11 +110,11 @@ def entity_details(request, ent_id):
 
     links = []
 
-    for link in EntityLink.objects.filter(entity_1 = entity):
-        links.append({'other_ent':link.entity_2.entityID, 'report':link.intelligence_report})
+    for link in EntityLink.objects.filter(entity1 = entity):
+        links.append({'other_ent':link.entity2.entityID, 'report':link.reportLink})
 
-    for link in EntityLink.objects.filter(entity_2 = entity):
-        links.append({'other_ent':link.entity_1, 'report':link.intelligence_report})
+    for link in EntityLink.objects.filter(entity2 = entity):
+        links.append({'other_ent':link.entity1, 'report':link.reportLink})
 
     print(entity, reports, links)
     context = {'entity':entity, 'reports':reports, 'links':links}
