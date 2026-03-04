@@ -15,5 +15,5 @@ test:
     # - python -m venv venv
     # - . venv/bin/activate
     # - pip install --upgrade pip
-    # - python install -r requirements.txt
+    # - pip install -r requirements.txt
     - python manage.py test

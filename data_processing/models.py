@@ -6,10 +6,35 @@ from django.conf import settings
 
 # intelligence report contents are defined below
 class IntelligenceReport(models.Model):
-    reportID = models.AutoField(primary_key = True)
+    reportID = models.AutoField(primary_key=True)
     fullReport = models.TextField()
-    intelligenceSource = models.TextField(null = True, blank = True)
-    creationTime = models.DateTimeField(auto_now_add= True)
+    intelligenceSource = models.TextField(null=True, blank=True)
+
+    # soft delete and audit timestamps
+    isDeleted = models.BooleanField(default=False)
+    updatedAt = models.DateTimeField(auto_now=True)
+    createdAt = models.DateTimeField(auto_now_add=True)
+
+    # who uploaded and created this report
+    createdBy = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_reports",
+    )
+
+    # AI label and approval gate
+    isAiGenerated = models.BooleanField(default=True)
+    isApproved = models.BooleanField(default=False)
+    approvedAt = models.DateTimeField(null=True, blank=True)
+    approvedBy = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approved_reports",
+    )
 
     def __str__(self):
         return f"Report {self.pk}"

@@ -36,7 +36,23 @@
                     {% for link in links %}
                         {% with entity=link.entity %}
                         <div style="border:1px solid #ccc; padding:15px; margin-bottom:15px; border-radius:8px;">
+                            {% if report and not report.isApproved %}
+  <div style="border:2px solid #c00; padding:12px; margin-bottom:16px; background:#fff3f3;">
+    <strong>⚠️ AI-generated output (Not approved yet)</strong><br>
+    The entities and profile blocks below were created automatically by AI. Please review and approve before relying on them.
 
+    <form method="post" action="{% url 'data_processing:approve_report' report.reportID %}" style="margin-top:10px;">
+      {% csrf_token %}
+      <button type="submit">Approve AI Extraction</button>
+    </form>
+  </div>
+{% endif %}
+
+            {% if report and report.isApproved %}
+            <div style="border:1px solid #2a7; padding:10px; margin-bottom:16px; background:#f3fff7;">
+                <strong> Approved by {{ report.approvedBy }}{% if report.approvedAt %} on {{ report.approvedAt }}{% endif %}</strong>
+            </div>
+            {% endif %}
                             <!-- ENTITY HEADER -->
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <div>

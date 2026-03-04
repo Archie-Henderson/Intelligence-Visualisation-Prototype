@@ -1,3 +1,4 @@
+import io
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.files.storage import FileSystemStorage
 from .forms import UserForm
@@ -5,12 +6,11 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from .models import IntelligenceReport, Entity, EntityIntelligenceReport, AccessLog, EntityProfile
-import io
 from pypdf import PdfReader
 from .spacy_event_pipeline import extract_and_store_spacy_for_report
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseBadRequest
-
+from django.utils import timezone
 
 # Create your views here.
 def index(request):
@@ -26,7 +26,6 @@ def upload(request):
 
     f = request.FILES["file"]
     filename = (f.name or "").lower()
-
     raw = f.read()
 
     # save original file
@@ -55,8 +54,15 @@ def upload(request):
         if not text.strip():
             return render(request, "web_page/upload.html", {"error": "File looks empty."})
 
-    report = IntelligenceReport.objects.create(fullReport=text)
+    # create report
+    report = IntelligenceReport.objects.create(
+        fullReport=text,
+        isAiGenerated=True,
+        isApproved=False,
+        createdBy=request.user if request.user.is_authenticated else None,
+    )
 
+    # run spaCy and store extracted entities/links
     extract_and_store_spacy_for_report(report.reportID)
 
     return redirect(reverse("data_processing:workspace", args=[report.reportID]))
@@ -292,3 +298,16 @@ def workspace(request, report_id: int):
         "report": report,
         "links": links,
     })
+
+@login_required
+@require_POST
+def approve_report(request, report_id: int):
+    report = get_object_or_404(IntelligenceReport, reportID=report_id)
+
+    report.isApproved = True
+    report.approvedAt = timezone.now()
+    report.approvedBy = request.user
+    report.save(update_fields=["isApproved", "approvedAt", "approvedBy"])
+
+    _log_action(request.user, report, "edit")
+    return redirect(reverse("data_processing:workspace", args=[report.reportID]))
