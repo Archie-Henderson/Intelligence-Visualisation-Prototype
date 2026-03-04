@@ -1,10 +1,16 @@
 from django.contrib import admin
-from .models import IntelligenceReport, Entity, User, EntityIntelligenceReport
+from django.contrib.auth import get_user_model
+from .models import (
+    IntelligenceReport, Entity, EntityIntelligenceReport,
+    EntityLink, AccessLog, EntityProfile
+)
 
-# Register your models here.
-from .models import *
-admin.site.register(IntelligenceReport)
-admin.site.register(EntityLink)
-admin.site.register(Entity)
+User = get_user_model()
+
 admin.site.register(User)
+admin.site.register(IntelligenceReport)
+admin.site.register(Entity)
 admin.site.register(EntityIntelligenceReport)
+admin.site.register(EntityLink)
+admin.site.register(AccessLog)
+admin.site.register(EntityProfile)

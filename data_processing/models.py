@@ -23,6 +23,9 @@ class IntelligenceReport(models.Model):
         blank=True,
         related_name="created_reports",
     )
+    @property
+    def creationTime(self):
+        return self.createdAt
 
     # AI label and approval gate
     isAiGenerated = models.BooleanField(default=True)
