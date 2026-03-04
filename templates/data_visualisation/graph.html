@@ -37,50 +37,53 @@
   </button>
 
   <!-- Filter Dropdown -->
-  <div id="filterPanel" style="
-      display: none;
-      background: #ffffff;
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin-bottom: 15px;
-  ">
+  <form role="form" method="post" action=".">
+    <div class="form-group" id="filterPanel" style="
+        display: none;
+        background: #ffffff;
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 15px;
+    ">
+        {% csrf_token %}
 
-      <label>Entity ID:</label>
-      <input type="number" id="node_id" style="width: 100%; margin-bottom: 8px;">
+        <label for="node_id">Entity ID:</label>
+        <input class="form-control" name="node_id" type="number" id="node_id" style="width: 100%; margin-bottom: 8px;">
 
-      <label>Entity Type:</label>
-      <select id="entity_type" style="width: 100%; margin-bottom: 8px;">
-          <option value="">Any</option>
-          <option value="PE">Person</option>
-          <option value="ORG">Organisation</option>
-          <option value="LO">Location</option>
-          <option value="TEL">Telecom</option>
-          <option value="VE">Vehicle</option>
-      </select>
+        <label>Entity Type:</label>
+        <select class="form-control" name="entity_type" id="entity_type" style="width: 100%; margin-bottom: 8px;">
+            <option value="">Any</option>
+            <option value="person">Person</option>
+            <option value="organisation">Organisation</option>
+            <option value="location">Location</option>
+            <option value="telecom">Telecom</option>
+            <option value="vehicle">Vehicle</option>
+        </select>
 
-      <label>Entity Name Includes:</label>
-      <input type="text" id="entity_name" style="width: 100%; margin-bottom: 8px;">
+        <label>Entity Name Includes:</label>
+        <input class="form-control" name="entity_name" type="text" id="entity_name" style="width: 100%; margin-bottom: 8px;">
 
-      <label>Report ID:</label>
-      <input type="number" id="report_id" style="width: 100%; margin-bottom: 8px;">
+        <label>Report ID:</label>
+        <input class="form-control" name="report_id" type="number" id="report_id" style="width: 100%; margin-bottom: 8px;">
 
-      <label>Created After:</label>
-      <input type="datetime-local" id="creation_date_start" style="width: 100%; margin-bottom: 8px;">
+        <label>Created After:</label>
+        <input class="form-control" name="creation_date_start" type="datetime-local" id="creation_date_start" style="width: 100%; margin-bottom: 8px;">
 
-      <label>Created Before:</label>
-      <input type="datetime-local" id="creation_date_end" style="width: 100%; margin-bottom: 12px;">
+        <label>Created Before:</label>
+        <input class="form-control" name="creation_date_end" type="datetime-local" id="creation_date_end" style="width: 100%; margin-bottom: 12px;">
 
-      <button id="applyFilters" style="
-          width: 100%;
-          padding: 8px;
-          background-color: #28a745;
-          color: white;
-          border: none;
-          cursor: pointer;
-      ">
-          Apply Filters
-      </button>
-  </div>
+        <button type="submit" class="btn btn-primary" id="applyFilters" style="
+            width: 100%;
+            padding: 8px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        ">
+            Apply Filters
+        </button>
+    </div>
+  </form>
 
   <h3>Linked Entities:</h3>
   <ul>
