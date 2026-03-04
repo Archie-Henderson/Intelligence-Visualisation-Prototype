@@ -13,7 +13,9 @@ def graph_view(request):
     filter_form = FiltersForm()
 
     ents = Entity.objects.all()
+    filtered_ents = Entity.objects.all()
     links = EntityLink.objects.all()
+    filter_data = False
     filtering = False
     context = {'unlinked':[],
                'linked':[],
@@ -32,39 +34,56 @@ def graph_view(request):
             filters = filter_form.cleaned_data
 
             if filters['node_id'] != None:
-                ents = ents.filter(entityID__in = walk_tree(filters['node_id']))
+                filtered_ents = filtered_ents.filter(entityID__in = walk_tree(filters['node_id']))
                 filtering = True
             if filters['entity_type'] != "":
-                ents = ents.filter(type = filters['entity_type'])
+                filtered_ents = filtered_ents.filter(type = filters['entity_type'])
                 filtering = True
             if filters['entity_name'] != "":
-                ents = ents.filter(name__contains = filters['entity_name'])
+                filtered_ents = filtered_ents.filter(name__contains = filters['entity_name'])
                 filtering = True
             # if filters['creation_date_end'] != None:
-            #     ents.filter(entry_date__lt = filters['creation_date_end'])
+            #     filtered_ents = filtered_ents.filter(entry_date__lt = filters['creation_date_end'])
             #     filtering = True
             # if filters['creation_date_start'] != None:
-            #     ents.filter(entry_date__gt = filters['creation_date_start'])
+            #     filtered_ents = filtered_ents.filter(entry_date__gt = filters['creation_date_start'])
             #     filtering = True
             if filters['report_id'] != None:
-                ents = ents.filter(entityID__in = EntityIntelligenceReport.objects.filter(report_id = filters['report_id']).values_list())
+                filtered_ents = filtered_ents.filter(entityID__in = EntityIntelligenceReport.objects.filter(report_id = filters['report_id']).values_list())
                 filtering = True
+            if filters['form_behaviour']:
+                filter_data = True
 
-    for ent in ents:
-        if (not filtering) and EntityLink.objects.filter(entity_1 = ent).count() +  EntityLink.objects.filter(entity_2 = ent).count() == 0:
-            context['unlinked'].append({'id':ent.entityID, 'name':ent.name})
-        else:
-            data['nodes'].append({'id':ent.entityID, 'name':ent.name})
-            context['linked'].append({'id':ent.entityID, 'name':ent.name})
-    
-    for link in links:
-        if link.entity_1 in ents and link.entity_2 in ents:
-            data['links'].append({'source':link.entity_1.entityID, 'target':link.entity_2.entityID})
+    if filter_data:
+        data = add_data(filtered_ents, True, links, data)
+    else:
+        data = add_data(ents, False, links, data)
+
+    context = add_context(filtered_ents, filtering, context)
 
     with open(json_path, "w") as f:
         json.dump(data, f)
 
     return render(request, 'data_visualisation/graph.html', context = context)
+
+def add_context(ents, filtering, context):
+    for ent in ents:
+            if (not filtering) and EntityLink.objects.filter(entity_1 = ent).count() +  EntityLink.objects.filter(entity_2 = ent).count() == 0:
+                context['unlinked'].append({'id':ent.entityID, 'name':ent.name})
+            else:
+                context['linked'].append({'id':ent.entityID, 'name':ent.name})
+    return context
+
+def add_data(ents, filtering, links, data):
+    for ent in ents:
+        if filtering or EntityLink.objects.filter(entity_1 = ent).count() +  EntityLink.objects.filter(entity_2 = ent).count() > 0:
+            data['nodes'].append({'id':ent.entityID, 'name':ent.name})
+
+    for link in links:
+        if link.entity_1 in ents and link.entity_2 in ents:
+            data['links'].append({'source':link.entity_1.entityID, 'target':link.entity_2.entityID})
+        
+    return data
 
 def walk_tree(ent_id):
     nodes = [Entity.objects.get(entityID = ent_id)]

@@ -46,6 +46,9 @@
         margin-bottom: 15px;
     ">
         {% csrf_token %}
+        <label for="form_behaviour">Filter Graph:</label>
+        <input type="checkbox" class="form-control" name="form_behaviour" id="form_behaviour">
+        <br>
 
         <label for="node_id">Entity ID:</label>
         <input class="form-control" name="node_id" type="number" id="node_id" style="width: 100%; margin-bottom: 8px;">

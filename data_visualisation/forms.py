@@ -1,6 +1,7 @@
 from django import forms
 
 class FiltersForm(forms.Form):
+    form_behaviour = forms.BooleanField(required=False)
     node_id = forms.IntegerField(required=False, label="Entity ID:")
     entity_type = forms.ChoiceField(required=False, label="Entity Type:", 
         choices={"person":"Person", "organisation":"Organisation", "location":"Location", "telecom":"Telecom", "vehicle":"Vehicle"})
