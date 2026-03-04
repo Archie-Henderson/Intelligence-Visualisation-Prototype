@@ -94,7 +94,7 @@
   </ul>
 </div>
   
-<div id="network_graph" style="flex-grow: 1;"></div>
+<div id="network_graph" style="flex-grow: 1;" class="svg-container"></div>
 
 </div>
 
@@ -116,13 +116,15 @@ const height = window.innerHeight - margin.top - margin.bottom;
 // append the svg object to the body of the page
 const svg = d3.select("#network_graph")
   .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform",`translate(${margin.left}, ${margin.top})`)
+    .attr("viewBox", "0 0 " + d3.max([width,height]) + " " + d3.max([width,height]))
+    .attr("preserveAspectRatio", "xMinYMin meet")
+    .classed("svg-content-responsive", true)
   .call(d3.zoom().on("zoom", function () {
-    d3.select(this).select("g").attr("transform", d3.event.transform);
-  }))
+       svg.attr("transform", d3.event.transform)
+    }))
+  .append("g")
+    .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
 
 d3.json("/static/graph_data.json", function(data) {
 
@@ -143,7 +145,6 @@ d3.json("/static/graph_data.json", function(data) {
       .attr("id", function(d){return "ent"+d.id})
       .attr("r", 8)
       .style("fill", "#69b3a2")
-      .attr("id", d => "node-" + d.id)
       .on('click', function(d){window.location.href = window.location.href + 'entities/' + d.id})
 
   nodes.append("title")
@@ -181,7 +182,7 @@ d3.json("/static/graph_data.json", function(data) {
       .style('opacity', 1)
       links
       .style("stroke", "#aaa")
-      .style("width", "1")
+      .style("stroke-width", "1")
       .style('opacity', 1)
     });
 
@@ -241,16 +242,15 @@ d3.json("/static/graph_data.json", function(data) {
       nodes.fy = null
     });
 
-  node.call(dragDrop);
-  
+  nodes.call(dragDrop);
 
   //Sidebar interaction
     document.querySelectorAll("#sidebar li[data-id]").forEach(function(li){
       li.addEventListener("click", function(){
           const entityId = this.getAttribute("data-id");
-          const targetNode = d3.select("#node-" + entityId);
+          const targetNode = d3.select(entityId);
 
-          node.style("fill", "#69b3a2").attr("r", 8);
+          nodes.style("fill", "#69b3a2").attr("r", 8);
 
           targetNode.style("fill", "#ff0000").attr("r", 14);
       });
