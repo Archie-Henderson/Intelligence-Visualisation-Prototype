@@ -107,8 +107,20 @@ class FilterEntitiesTests(SimpleTestCase):
     def test_filter_by_type(self):
         self.assertTrue(FILTERING_AVAILABLE)
 
+    def test_filter_ui_present(self):
+        response = self.client.get(reverse('data_visualisation:graph'))
+        self.assertContains(response, "Filters")
+        self.assertContains(response, "Entity ID")
+        self.assertContains(response, "Entity Type")
+        self.assertContains(response, "Apply Filters")
+
 @skipUnless(RESIZING_AVAILABLE, "resize_graph not implemented")
 class ResizeGraphTests(SimpleTestCase):
 
     def test_resize_graph(self):
         self.assertTrue(RESIZING_AVAILABLE)
+
+    def test_graph_uses_window_size(self):
+        response = self.client.get(reverse('data_visualisation:graph'))
+        self.assertContains(response, "window.innerWidth")
+        self.assertContains(response, "window.innerHeight")
