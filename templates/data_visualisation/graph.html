@@ -21,7 +21,7 @@
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
 ">
 
-  <h3>Sidebar</h3>
+  <h2>Sidebar</h2>
 
   <!-- Filter Button -->
   <button id="filterBtn" style="
@@ -82,12 +82,15 @@
       </button>
   </div>
 
-  <p>All Entities:</p>
+  <h3>Linked Entities:</h3>
   <ul>
     <script>console.log("{{linked}}")</script>
     {% for ent in linked %}
       <li data-id="{{ ent.entityID }}" style="cursor: pointer;">{{ ent.name }}</li>
     {% endfor %}
+  </ul>
+  <h3>Unlinked Entities</h3>
+  <ul>
     {% for ent in unlinked %}
       <li data-id="{{ ent.entityID }}" style="cursor: pointer;">{{ ent.name }}</li>
     {% endfor %}

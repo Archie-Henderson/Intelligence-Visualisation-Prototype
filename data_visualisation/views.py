@@ -14,6 +14,7 @@ def graph_view(request):
 
     ents = Entity.objects.all()
     links = EntityLink.objects.all()
+    filtering = False
     context = {'unlinked':[],
                'linked':[],
                "cur_url": reverse('data_visualisation:graph'),
@@ -32,19 +33,25 @@ def graph_view(request):
 
             if filters['node_id'] != None:
                 ents = ents.filter(entityID__in = walk_tree(filters['node_id']))
+                filtering = True
             if filters['entity_type'] != "":
                 ents = ents.filter(type = filters['entity_type'])
+                filtering = True
             if filters['entity_name'] != "":
                 ents = ents.filter(name__contains = filters['entity_name'])
+                filtering = True
             # if filters['creation_date_end'] != None:
             #     ents.filter(entry_date__lt = filters['creation_date_end'])
+            #     filtering = True
             # if filters['creation_date_start'] != None:
             #     ents.filter(entry_date__gt = filters['creation_date_start'])
+            #     filtering = True
             if filters['report_id'] != None:
                 ents = ents.filter(entityID__in = EntityIntelligenceReport.objects.filter(report_id = filters['report_id']).values_list())
+                filtering = True
 
     for ent in ents:
-        if EntityLink.objects.filter(entity_1 = ent).count() +  EntityLink.objects.filter(entity_2 = ent).count() == 0:
+        if (not filtering) and EntityLink.objects.filter(entity_1 = ent).count() +  EntityLink.objects.filter(entity_2 = ent).count() == 0:
             context['unlinked'].append({'id':ent.entityID, 'name':ent.name})
         else:
             data['nodes'].append({'id':ent.entityID, 'name':ent.name})
