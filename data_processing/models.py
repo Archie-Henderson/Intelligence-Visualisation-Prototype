@@ -30,6 +30,13 @@ class Entity(models.Model):
     name = models.CharField(max_length = 255)
     type = models.CharField(max_length = 20, choices= ENTITY_TYPES)
 
+    #delete wrong ones
+    isDeleted = models.BooleanField(default=False)     
+    # AI or user, who added the entity
+    source = models.CharField(max_length=20, default="SPACY")  
+    updatedAt = models.DateTimeField(auto_now=True)
+
+
     def __str__(self):
         return f"{self.name} ({self.type})"
 
@@ -73,6 +80,10 @@ class EntityIntelligenceReport(models.Model):
     entity = models.ForeignKey(Entity, on_delete = models.CASCADE)
     report = models.ForeignKey(IntelligenceReport, on_delete = models.CASCADE)
 
+    isDeleted = models.BooleanField(default=False)
+    source = models.CharField(max_length=20, default="SPACY")  
+    updatedAt = models.DateTimeField(auto_now=True) 
+
     class Meta:
         unique_together = ("entity", "report")
 
@@ -109,7 +120,12 @@ class EntityLink(models.Model):
 class AccessLog(models.Model):
     
     logID = models.AutoField(primary_key= True)
-    user = models.ForeignKey(User, on_delete= models.SET_NULL, null =  True, blank = True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
     report = models.ForeignKey(IntelligenceReport, on_delete= models.SET_NULL, null =  True, blank = True)
 
     # identify what was the action (edited, added, viewed...)
@@ -123,4 +139,18 @@ class AccessLog(models.Model):
     def __str__(self):
         return f"{self.actionTime} {self.actionType} {self.user} {self.report}"
     
-# project created by user
+class EntityProfile(models.Model):
+    profileID = models.AutoField(primary_key=True)
+    entity = models.OneToOneField(Entity, on_delete=models.CASCADE, related_name="profile")
+
+    age = models.IntegerField(null=True, blank=True)
+    address = models.TextField(null=True, blank=True)
+    role = models.CharField(max_length=80, null=True, blank=True)
+
+    notes = models.TextField(null=True, blank=True)
+
+    source = models.CharField(max_length=10, default="AI")  # AI / USER
+    updatedAt = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Profile for {self.entity}"
