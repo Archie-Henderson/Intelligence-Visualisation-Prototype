@@ -125,3 +125,5 @@ data_processing/migrations/*
 __pycache__/
 *.pyc
 data_processing/migrations/
+media/
+where
