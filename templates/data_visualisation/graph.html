@@ -47,33 +47,39 @@
     ">
         {% csrf_token %}
         <label for="form_behaviour">Filter Graph:</label>
-        <input type="checkbox" class="form-control" name="form_behaviour" id="form_behaviour">
+        <input type="checkbox" class="form-control" name="form_behaviour" id="form_behaviour" 
+        {% if form.form_behaviour %} checked {% endif %}>
         <br>
 
         <label for="node_id">Entity ID:</label>
-        <input class="form-control" name="node_id" type="number" id="node_id" style="width: 100%; margin-bottom: 8px;">
+        <input class="form-control" name="node_id" type="number" id="node_id" style="width: 100%; margin-bottom: 8px;"
+        {% if form.node_id != None %} value="{{ form.node_id }}" {% endif %}>
 
         <label>Entity Type:</label>
         <select class="form-control" name="entity_type" id="entity_type" style="width: 100%; margin-bottom: 8px;">
             <option value="">Any</option>
-            <option value="person">Person</option>
-            <option value="organisation">Organisation</option>
-            <option value="location">Location</option>
-            <option value="telecom">Telecom</option>
-            <option value="vehicle">Vehicle</option>
+            <option value="person" {% if form.entity_type == "person" %} selected {% endif %}>Person</option>
+            <option value="organisation" {% if form.entity_type == "organisation" %} selected {% endif %}>Organisation</option>
+            <option value="location" {% if form.entity_type == "location" %} selected {% endif %}>Location</option>
+            <option value="telecom" {% if form.entity_type == "telecom" %} selected {% endif %}>Telecom</option>
+            <option value="vehicle" {% if form.entity_type == "vehicle" %} selected {% endif %}>Vehicle</option>
         </select>
 
         <label>Entity Name Includes:</label>
-        <input class="form-control" name="entity_name" type="text" id="entity_name" style="width: 100%; margin-bottom: 8px;">
+        <input class="form-control" name="entity_name" type="text" id="entity_name" style="width: 100%; margin-bottom: 8px;"
+        {% if form.entity_name != "" %} value="{{ form.entity_name }}" {% endif %}>
 
         <label>Report ID:</label>
-        <input class="form-control" name="report_id" type="number" id="report_id" style="width: 100%; margin-bottom: 8px;">
+        <input class="form-control" name="report_id" type="number" id="report_id" style="width: 100%; margin-bottom: 8px;"
+        {% if form.report_id != None %} value="{{ form.report_id }}" {% endif %}>
 
         <label>Created After:</label>
-        <input class="form-control" name="creation_date_start" type="datetime-local" id="creation_date_start" style="width: 100%; margin-bottom: 8px;">
+        <input class="form-control" name="creation_date_start" type="date" id="creation_date_start" style="width: 100%; margin-bottom: 8px;"
+        {% if form.creation_date_start != None %} value="{{ form.creation_date_start }}" {% endif %}>
 
         <label>Created Before:</label>
-        <input class="form-control" name="creation_date_end" type="datetime-local" id="creation_date_end" style="width: 100%; margin-bottom: 12px;">
+        <input class="form-control" name="creation_date_end" type="date" id="creation_date_end" style="width: 100%; margin-bottom: 12px;"
+        {% if form.creation_date_end != None %} value="{{ form.creation_date_end }}" {% endif %}>
 
         <button type="submit" class="btn btn-primary" id="applyFilters" style="
             width: 100%;
@@ -90,7 +96,6 @@
 
   <h3>Linked Entities:</h3>
   <ul>
-    <script>console.log("{{linked}}")</script>
     {% for ent in linked %}
       <li data-id="{{ ent.entityID }}" style="cursor: pointer;">{{ ent.name }}</li>
     {% endfor %}
@@ -271,21 +276,6 @@ d3.json("/static/graph_data.json", function(data) {
 document.getElementById("filterBtn").addEventListener("click", function () {
     const panel = document.getElementById("filterPanel");
     panel.style.display = panel.style.display === "none" ? "block" : "none";
-});
-
-// Filter button click (frontend only for now)
-document.getElementById("applyFilters").addEventListener("click", function () {
-    const filters = {
-        node_id: document.getElementById("filter_node_id").value,
-        entity_type: document.getElementById("filter_entity_type").value,
-        entity_name: document.getElementById("filter_entity_name").value,
-        report_id: document.getElementById("filter_report_id").value,
-        creation_date_start: document.getElementById("filter_date_start").value,
-        creation_date_end: document.getElementById("filter_date_end").value
-    };
-
-    console.log("Filters selected:", filters);
-    alert("Filters captured. Backend wiring next.");
 });
 </script>
 </body>
