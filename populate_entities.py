@@ -207,14 +207,12 @@ def add_entity(name, type, reportIDs):
     ent.type = type
     ent.save()
     for reportID in reportIDs:
-        entity_intelligence_report = EntityIntelligenceReport.objects.create()
-        entity_intelligence_report.entity = Entity.objects.get(name = name)
-        entity_intelligence_report.report = IntelligenceReport.objects.get(reportID = reportID)
+        entity_intelligence_report = EntityIntelligenceReport.objects.create(entity=Entity.objects.get(name = name), report=IntelligenceReport.objects.get(reportID = reportID))
         entity_intelligence_report.save()
     return ent, entity_intelligence_report
 
 def add_link(ent1, ent2, report):
-    link = EntityLink.objects.get_or_create(entity1 = ent1, entity2 = ent2, intelligence_report = report)[0]
+    link = EntityLink.objects.get_or_create(entity1 = ent1, entity2 = ent2, reportLink = report)[0]
     link.save()
     return link
 
