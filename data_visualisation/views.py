@@ -34,7 +34,6 @@ def graph_view(request, node_id = None):
 
         if filter_form.is_valid():
             filters = filter_form.cleaned_data
-            print(filters['form_behaviour'])
 
             if filters['node_id'] != None:
                 filtered_ents = filtered_ents.filter(entityID__in = walk_tree(filters['node_id']))
@@ -56,7 +55,6 @@ def graph_view(request, node_id = None):
                 filtering = True
             if filters['form_behaviour']:
                 filter_data = True
-                print("Filtering graph")
 
     if filter_data:
         data = add_data(ents=filtered_ents, show_unlinked_nodes=True, links=links, data=data)
@@ -125,6 +123,5 @@ def entity_details(request, ent_id):
     for link in EntityLink.objects.filter(entity2 = entity):
         links.append({'other_ent':link.entity1, 'report':link.reportLink})
 
-    print(entity, reports, links)
     context = {'entity':entity, 'reports':reports, 'links':links}
     return render(request, 'data_visualisation/entity_details.html', context=context)
