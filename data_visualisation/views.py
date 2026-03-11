@@ -56,8 +56,13 @@ def graph_view(request):
     if filtering:
         data = add_data(filtered_ents, True, links, data)
     else:
-        data = add_data(ents, False, links, data)
+        data = add_data(ents=ents, show_unlinked_nodes=False, links=links, data=data)
 
+
+    context = {'unlinked':[],
+               'linked':[],
+               "cur_url": reverse('data_visualisation:graph'),
+               "form":filters}
     context = add_context(filtered_ents if filtering else ents, filtering, context)
 
     with open(json_path, "w") as f:
@@ -73,7 +78,7 @@ def add_context(ents, filtering, context):
                 context['linked'].append({'id':ent.entityID, 'name':ent.name})
     return context
 
-def add_data(ents, filtering, links, data):
+def add_data(ents, show_unlinked_nodes, links, data):
     # How many times each entity is mentioned across all reports (non-deleted)
     mention_counts_qs = (
         EntityIntelligenceReport.objects
@@ -84,7 +89,7 @@ def add_data(ents, filtering, links, data):
     mention_counts = {row["entity_id"]: row["count"] for row in mention_counts_qs}
 
     for ent in ents:
-        if filtering or EntityLink.objects.filter(entity1=ent).count() + EntityLink.objects.filter(entity2=ent).count() > 0:
+        if show_unlinked_nodes or EntityLink.objects.filter(entity1=ent).count() + EntityLink.objects.filter(entity2=ent).count() > 0:
             freq = mention_counts.get(ent.entityID, 0)
             data["nodes"].append({"id": ent.entityID, "name": ent.name, "freq": freq})
 

@@ -28,17 +28,42 @@
                 {% if report %}
                     <h2>Report {{ report.reportID }}</h2>
 
+                    <!-- AI-generated intelligence summary -->
+                    {% if report.intelligenceSource %}
+                    <div style="border:1px solid #2a7; padding:12px; margin:12px 0; background:#f3fff7;">
+                        <strong>AI Intelligence Summary</strong>
+                        <p style="white-space: pre-wrap; margin-top:8px;">
+                            {{ report.intelligenceSource }}
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Full original report text -->
+                    <h3>Original Report Text</h3>
                     <p style="white-space: pre-wrap;">{{ report.fullReport }}</p>
 
                     <hr>
                     <h3>Entities Linked To This Report</h3>
+
+                    <!-- Link to open graph focused on this report -->
+                    <p>
+                        <a href="{% url 'data_visualisation:graph' %}"
+                           onclick="event.preventDefault(); document.getElementById('graph-report-form').submit();">
+                            View entities graph for this report
+                        </a>
+                    </p>
+                    <form id="graph-report-form" method="post" action="{% url 'data_visualisation:graph' %}" style="display:none;">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_behaviour" value="on">
+                        <input type="hidden" name="report_id" value="{{ report.reportID }}">
+                    </form>
 
                     {% for link in links %}
                         {% with entity=link.entity %}
                         <div style="border:1px solid #ccc; padding:15px; margin-bottom:15px; border-radius:8px;">
                             {% if report and not report.isApproved %}
   <div style="border:2px solid #c00; padding:12px; margin-bottom:16px; background:#fff3f3;">
-    <strong>⚠️ AI-generated output (Not approved yet)</strong><br>
+    <strong> AI-generated output (Not approved yet)</strong><br>
     The entities and profile blocks below were created automatically by AI. Please review and approve before relying on them.
 
     <form method="post" action="{% url 'data_processing:approve_report' report.reportID %}" style="margin-top:10px;">
