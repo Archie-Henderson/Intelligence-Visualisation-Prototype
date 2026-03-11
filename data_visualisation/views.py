@@ -93,8 +93,14 @@ def add_data(ents, show_unlinked_nodes, links, data):
     return data
 
 def walk_tree(ent_id):
-    nodes = [Entity.objects.get(entityID = ent_id)]
-    discovered_nodes = {Entity.objects.get(entityID = ent_id).entityID}
+    init_ent = Entity.objects.filter(entityID = ent_id)
+    print(init_ent)
+    if init_ent.count() == 1:
+        init_ent = init_ent.first()
+    else:
+        return set()
+    nodes = [init_ent]
+    discovered_nodes = {init_ent.entityID}
 
     while len(nodes) > 0:
         node = nodes.pop()
