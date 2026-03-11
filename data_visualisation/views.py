@@ -146,7 +146,7 @@ def add_data(ents, show_unlinked_nodes, links, data):
             )
 
     return data
-    
+
 def walk_tree(ent_id):
     start_node = Entity.objects.get(entityID=ent_id)
     nodes = [start_node]
@@ -205,3 +205,8 @@ def entity_details(request, ent_id):
         "report_links": report_links,
     }
     return render(request, "data_visualisation/entity_details.html", context=context)
+
+def report_details(request, report_id):
+    report = IntelligenceReport.objects.get(reportID=report_id, isDeleted=False)
+    context = {"report": report}
+    return render(request, "data_visualisation/report_details.html", context=context)

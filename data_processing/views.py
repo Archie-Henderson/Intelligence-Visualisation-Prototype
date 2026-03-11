@@ -12,6 +12,38 @@ from django.views.decorators.http import require_POST
 from django.http import HttpResponseBadRequest
 from django.utils import timezone
 
+import os
+from openai import OpenAI
+
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+INTELLIGENCE_SUMMARY_INSTRUCTIONS = """
+Rewrite the uploaded text into formal UK police intelligence-style narrative.
+
+Requirements:
+- Output plain text only.
+- Do not output JSON.
+- Do not use markdown.
+- Do not mention AI, extracted entities, counts, labels, events, schema, or analysis.
+- Start each separate intelligence item with "Intelligence provides that..."
+- Preserve important facts accurately from the source text.
+- Use formal UK police intelligence wording.
+- Include dates, names, aliases, addresses, vehicles, locations, and behaviour where relevant.
+- If the source contains multiple separate intelligence items, separate them into paragraphs.
+- Do not invent facts that are not present in the source.
+- Keep the result readable and concise.
+"""
+
+def generate_intelligence_summary(text: str) -> str:
+    prompt = f"{INTELLIGENCE_SUMMARY_INSTRUCTIONS}\n\nTEXT:\n{text}"
+
+    resp = client.responses.create(
+        model="gpt-4.1-mini",
+        input=prompt,
+    )
+
+    return (resp.output_text or "").strip()
+
 # Create your views here.
 def index(request):
     context_dict = {}
@@ -63,48 +95,14 @@ def upload(request):
     )
 
     # run spaCy and store extracted entities/links
-    result = extract_and_store_spacy_for_report(report.reportID)
+    extract_and_store_spacy_for_report(report.reportID)
 
-    # Build a simple AI-style summary that highlights the key
-    # Entities detected for this report, store it in intelligenceSource.
-    linked_entities = (
-        EntityIntelligenceReport.objects
-        .select_related("entity")
-        .filter(report=report, isDeleted=False, entity__isDeleted=False)
-    )
-
-    people = sorted({link.entity.name for link in linked_entities if link.entity.type == Entity.PEOPLE})
-    vehicles = sorted({link.entity.name for link in linked_entities if link.entity.type == Entity.VEHICLE})
-    telecom = sorted({link.entity.name for link in linked_entities if link.entity.type == Entity.TELECOM})
-    locations = sorted({link.entity.name for link in linked_entities if link.entity.type == Entity.LOCATION})
-
-    summary_lines = []
-    summary_lines.append("AI-generated summary of uploaded intelligence report.")
-    counts = result.get("entity_counts", {})
-    summary_lines.append(
-        f"Detected entities - People: {counts.get('people', 0)}, "
-        f"Vehicles: {counts.get('vehicle', 0)}, "
-        f"Telecom: {counts.get('telecom', 0)}, "
-        f"Locations: {counts.get('location', 0)}."
-    )
-
-    if people:
-        summary_lines.append("People entities: " + ", ".join(people))
-    if vehicles:
-        summary_lines.append("Vehicle entities: " + ", ".join(vehicles))
-    if telecom:
-        summary_lines.append("Telecom entities: " + ", ".join(telecom))
-    if locations:
-        summary_lines.append("Location entities: " + ", ".join(locations))
-
-    rule_events_found = result.get("rule_events_found", 0)
-    if rule_events_found:
-        summary_lines.append(f"Detected {rule_events_found} potential event(s) in the narrative.")
-
-    report.intelligenceSource = "\n".join(summary_lines)
+    # generate readable intelligence narrative for UI
+    report.intelligenceSource = generate_intelligence_summary(text)
     report.save(update_fields=["intelligenceSource"])
 
     return redirect(reverse("data_processing:workspace", args=[report.reportID]))
+
 def register(request):
     if request.method == 'POST':
         form = UserForm(request.POST)
@@ -350,3 +348,22 @@ def approve_report(request, report_id: int):
 
     _log_action(request.user, report, "edit")
     return redirect(reverse("data_processing:workspace", args=[report.reportID]))
+
+@login_required
+@require_POST
+def soft_delete_report(request, report_id: int):
+    report = get_object_or_404(IntelligenceReport, reportID=report_id, isDeleted=False)
+
+    report.isDeleted = True
+    report.save(update_fields=["isDeleted", "updatedAt"])
+
+    EntityIntelligenceReport.objects.filter(report=report, isDeleted=False).update(
+        isDeleted=True,
+        updatedAt=timezone.now(),
+        source="USER",
+    )
+
+    _log_action(request.user, report, "delete")
+
+    next_url = request.POST.get("next") or reverse("data_processing:index")
+    return redirect(next_url)

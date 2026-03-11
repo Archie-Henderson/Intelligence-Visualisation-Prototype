@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Full Report</title>
+</head>
+
+<body style="margin:0; font-family: Arial, sans-serif; background:#f2f2f2;">
+
+<a href="javascript:history.back()" style="
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    padding: 10px 14px;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+    z-index: 1000;
+">
+    ← Back
+</a>
+
+<div style="max-width: 1000px; margin: 70px auto 30px auto; padding: 0 20px;">
+
+    <div style="
+        background: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    ">
+        <h2 style="margin-top: 0;">Full Report {{ report.reportID }}</h2>
+        <p><strong>Report ID:</strong> {{ report.reportID }}</p>
+        <p><strong>Created At:</strong> {{ report.createdAt }}</p>
+        <p><strong>Updated At:</strong> {{ report.updatedAt }}</p>
+        <p><strong>Created By:</strong>
+            {% if report.createdBy %}
+                {{ report.createdBy }}
+            {% else %}
+                Unknown
+            {% endif %}
+        </p>
+        <p><strong>AI Generated:</strong> {{ report.isAiGenerated }}</p>
+        <p><strong>Approved:</strong> {{ report.isApproved }}</p>
+    </div>
+
+    <div style="
+        background: white;
+        padding: 20px;
+        border-radius: 6px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    ">
+        <h3 style="margin-top: 0;">Full Uploaded Report Text</h3>
+
+        <div style="
+            background:#f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 12px 14px;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        ">
+            {{ report.fullReport }}
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

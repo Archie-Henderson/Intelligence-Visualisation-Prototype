@@ -14,6 +14,7 @@ urlpatterns = [
     # Workspace and report pages
     path("workspace/<int:report_id>/", views.workspace, name="workspace"),
     path("reports/<int:report_id>/", views.report_detail, name="report_detail"),
+    path("reports/<int:report_id>/delete/", views.soft_delete_report, name="delete_report"),
 
     # Entity actions
     path("entity/<int:entity_id>/edit/", views.edit_entity, name="edit_entity"),

@@ -5,5 +5,6 @@ app_name = 'data_visualisation'
 
 urlpatterns = [
     path('', views.graph_view, name='graph'),
-    path('entities/<int:ent_id>',views.entity_details, name='ent_details')
+    path('entities/<int:ent_id>',views.entity_details, name='ent_details'),
+    path("reports/<int:report_id>/", views.report_details, name="report_details"),
 ]

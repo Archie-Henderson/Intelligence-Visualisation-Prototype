@@ -1,9 +1,9 @@
 <!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Entity Details</title>
-<p><strong>Entity ID:</strong> {{ entity.entityID }}</p>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Entity Details</title>
 </head>
 
 <body style="margin:0; font-family: Arial, sans-serif; background:#f2f2f2;">
@@ -18,13 +18,25 @@
     text-decoration: none;
     border-radius: 4px;
     font-weight: bold;
+    z-index: 1000;
 ">
     ← Return to Graph
 </a>
 
 <div style="max-width: 1000px; margin: 70px auto 30px auto; padding: 0 20px;">
 
-    <h2>Entity: {{ entity.name }}</h2>
+    <div style="
+        background: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    ">
+        <h2 style="margin-top: 0;">Entity: {{ entity.name }}</h2>
+        <p><strong>Entity ID:</strong> {{ entity.entityID }}</p>
+        <p><strong>Entity Type:</strong> {{ entity.type }}</p>
+        <p><strong>Entity Updated At:</strong> {{ entity.updatedAt }}</p>
+    </div>
 
     <h3>Reports mentioning {{ entity.name }}</h3>
 
@@ -39,19 +51,38 @@
                 box-shadow: 0 1px 4px rgba(0,0,0,0.1);
             ">
 
-                <h4>Report {{ item.report.reportID }}</h4>
+                <h4 style="margin-top: 0;">Report {{ item.report.reportID }}</h4>
 
+                <p style="margin-bottom: 6px;"><strong>Intelligence Report:</strong></p>
                 <div style="
                     background:#f8f9fa;
                     border-left: 4px solid #007bff;
                     padding: 10px 12px;
-                    margin-bottom: 10px;
+                    margin-bottom: 12px;
                     font-size: 14px;
                     line-height: 1.5;
                     white-space: pre-wrap;
                 ">
-                    {{ item.report.fullReport }}
+                    {% if item.report.intelligenceSource %}
+                        {{ item.report.intelligenceSource }}
+                    {% else %}
+                        No intelligence summary available.
+                    {% endif %}
                 </div>
+
+                <p style="margin-bottom: 14px;">
+                    <a href="{% url 'data_visualisation:report_details' item.report.reportID %}" style="
+                        display: inline-block;
+                        padding: 8px 12px;
+                        background: #28a745;
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 4px;
+                        font-weight: bold;
+                    ">
+                        View Full Report
+                    </a>
+                </p>
 
                 <strong>Other entities in this report:</strong>
                 {% if item.other_entities %}
@@ -60,7 +91,7 @@
                             <li>
                                 <a href="{% url 'data_visualisation:ent_details' other.entityID %}"
                                    style="text-decoration:none; color:#007bff;">
-                                    {{ other.name }}
+                                    {{ other.name }} (ID: {{ other.entityID }})
                                 </a>
                             </li>
                         {% endfor %}
@@ -79,3 +110,4 @@
 </div>
 
 </body>
+</html>
