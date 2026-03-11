@@ -27,66 +27,48 @@
 
     <h3>Reports mentioning {{ entity.name }}</h3>
 
-    {% if links %}
+    {% if report_links %}
 
-        {% for link in links %}
+        {% for item in report_links %}
+            <div style="
+                background: white;
+                padding: 18px 20px;
+                margin-bottom: 18px;
+                border-radius: 6px;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            ">
 
-            {% ifchanged link.report.reportID %}
-
-                {% if not forloop.first %}
-                    </ul>
-                    </div>
-                {% endif %}
+                <h4>Report {{ item.report.reportID }}</h4>
 
                 <div style="
-                    background: white;
-                    padding: 18px 20px;
-                    margin-bottom: 18px;
-                    border-radius: 6px;
-                    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+                    background:#f8f9fa;
+                    border-left: 4px solid #007bff;
+                    padding: 10px 12px;
+                    margin-bottom: 10px;
+                    font-size: 14px;
+                    line-height: 1.5;
+                    white-space: pre-wrap;
                 ">
-
-                    <h4>Report {{ link.report.reportID }}</h4>
-
-                    <div style="
-                        background:#f8f9fa;
-                        border-left: 4px solid #007bff;
-                        padding: 10px 12px;
-                        margin-bottom: 10px;
-                        font-size: 14px;
-                        line-height: 1.5;
-                        white-space: pre-wrap;
-                    ">
-                        {{ link.report.fullReport }}
-                    </div>
-
-                    <p><strong>Trustworthiness Level:</strong> <span style="color:#007bff;">1</span></p>
-                    <p>connected through report {{ link.report.reportID }}</p>
-                    
-                    <strong>Associated Entities:</strong>
-                    <ul style="margin: 6px 0 0 20px;">
-
-            {% endifchanged %}
-
-                        <li>
-                            {% if link.other_ent.name %}
-                                <a href="{% url 'data_visualisation:ent_details' link.other_ent.entityID %}"
-                                   style="text-decoration:none; color:#007bff;">
-                                    {{ link.other_ent.name }}
-                                </a>
-                            {% else %}
-                                <a href="{% url 'data_visualisation:ent_details' link.other_ent %}"
-                                   style="text-decoration:none; color:#007bff;">
-                                    Entity {{ link.other_ent }}
-                                </a>
-                            {% endif %}
-                        </li>
-
-            {% if forloop.last %}
-                    </ul>
+                    {{ item.report.fullReport }}
                 </div>
-            {% endif %}
 
+                <strong>Other entities in this report:</strong>
+                {% if item.other_entities %}
+                    <ul style="margin: 6px 0 0 20px;">
+                        {% for other in item.other_entities %}
+                            <li>
+                                <a href="{% url 'data_visualisation:ent_details' other.entityID %}"
+                                   style="text-decoration:none; color:#007bff;">
+                                    {{ other.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p style="margin-top: 4px;">No other entities linked in this report.</p>
+                {% endif %}
+
+            </div>
         {% endfor %}
 
     {% else %}
