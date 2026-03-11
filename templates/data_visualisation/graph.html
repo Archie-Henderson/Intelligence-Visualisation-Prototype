@@ -38,6 +38,7 @@
 
   <!-- Filter Dropdown -->
   <form role="form" method="post" action=".">
+    {% csrf_token %}
     <div class="form-group" id="filterPanel" style="
         display: none;
         background: #ffffff;
@@ -45,43 +46,46 @@
         padding: 10px;
         margin-bottom: 15px;
     ">
-        {% csrf_token %}
         <label for="form_behaviour">Filter Graph:</label>
-        <input type="checkbox" class="form-control" name="form_behaviour" id="form_behaviour" 
-        {% if form.form_behaviour %} checked {% endif %}>
-        <br>
+        <input type="checkbox" name="form_behaviour" id="form_behaviour"
+               {% if form.form_behaviour.value %}checked{% endif %}>
+        <br><br>
 
         <label for="node_id">Entity ID:</label>
-        <input class="form-control" name="node_id" type="number" id="node_id" style="width: 100%; margin-bottom: 8px;"
-        {% if form.node_id != None %} value="{{ form.node_id }}" {% endif %}>
+        <input name="node_id" type="number" id="node_id"
+               style="width: 100%; margin-bottom: 8px;"
+               value="{{ form.node_id.value|default_if_none:'' }}">
 
-        <label>Entity Type:</label>
-        <select class="form-control" name="entity_type" id="entity_type" style="width: 100%; margin-bottom: 8px;">
+        <label for="entity_type">Entity Type:</label>
+        <select name="entity_type" id="entity_type" style="width: 100%; margin-bottom: 8px;">
             <option value="">Any</option>
-            <option value="person" {% if form.entity_type == "person" %} selected {% endif %}>Person</option>
-            <option value="organisation" {% if form.entity_type == "organisation" %} selected {% endif %}>Organisation</option>
-            <option value="location" {% if form.entity_type == "location" %} selected {% endif %}>Location</option>
-            <option value="telecom" {% if form.entity_type == "telecom" %} selected {% endif %}>Telecom</option>
-            <option value="vehicle" {% if form.entity_type == "vehicle" %} selected {% endif %}>Vehicle</option>
+            <option value="people" {% if form.entity_type.value == "people" %}selected{% endif %}>People</option>
+            <option value="location" {% if form.entity_type.value == "location" %}selected{% endif %}>Location</option>
+            <option value="telecom" {% if form.entity_type.value == "telecom" %}selected{% endif %}>Telecom</option>
+            <option value="vehicle" {% if form.entity_type.value == "vehicle" %}selected{% endif %}>Vehicle</option>
         </select>
 
-        <label>Entity Name Includes:</label>
-        <input class="form-control" name="entity_name" type="text" id="entity_name" style="width: 100%; margin-bottom: 8px;"
-        {% if form.entity_name != "" %} value="{{ form.entity_name }}" {% endif %}>
+        <label for="entity_name">Entity Name Includes:</label>
+        <input name="entity_name" type="text" id="entity_name"
+               style="width: 100%; margin-bottom: 8px;"
+               value="{{ form.entity_name.value|default_if_none:'' }}">
 
-        <label>Report ID:</label>
-        <input class="form-control" name="report_id" type="number" id="report_id" style="width: 100%; margin-bottom: 8px;"
-        {% if form.report_id != None %} value="{{ form.report_id }}" {% endif %}>
+        <label for="report_id">Report ID:</label>
+        <input name="report_id" type="number" id="report_id"
+               style="width: 100%; margin-bottom: 8px;"
+               value="{{ form.report_id.value|default_if_none:'' }}">
 
-        <label>Created After:</label>
-        <input class="form-control" name="creation_date_start" type="date" id="creation_date_start" style="width: 100%; margin-bottom: 8px;"
-        {% if form.creation_date_start != None %} value="{{ form.creation_date_start }}" {% endif %}>
+        <label for="creation_date_start">Created After:</label>
+        <input name="creation_date_start" type="date" id="creation_date_start"
+               style="width: 100%; margin-bottom: 8px;"
+               value="{{ form.creation_date_start.value|default_if_none:'' }}">
 
-        <label>Created Before:</label>
-        <input class="form-control" name="creation_date_end" type="date" id="creation_date_end" style="width: 100%; margin-bottom: 12px;"
-        {% if form.creation_date_end != None %} value="{{ form.creation_date_end }}" {% endif %}>
+        <label for="creation_date_end">Created Before:</label>
+        <input name="creation_date_end" type="date" id="creation_date_end"
+               style="width: 100%; margin-bottom: 12px;"
+               value="{{ form.creation_date_end.value|default_if_none:'' }}">
 
-        <button type="submit" class="btn btn-primary" id="applyFilters" style="
+        <button type="submit" id="applyFilters" style="
             width: 100%;
             padding: 8px;
             background-color: #28a745;
@@ -93,7 +97,6 @@
         </button>
     </div>
   </form>
-
   <h3>Linked Entities:</h3>
   <ul>
     {% for ent in linked %}

@@ -33,7 +33,7 @@ def graph_view(request):
         filters = filter_form.cleaned_data
 
         if filters["node_id"] is not None:
-            filtered_ents = filtered_ents.filter(entityID__in=walk_tree(filters["node_id"]))
+            filtered_ents = filtered_ents.filter(entityID=filters["node_id"])
             filtering = True
 
         if filters["entity_type"]:
@@ -47,22 +47,60 @@ def graph_view(request):
         if filters["report_id"] is not None:
             report_entity_ids = (
                 EntityIntelligenceReport.objects
-                .filter(report_id=filters["report_id"], isDeleted=False, entity__isDeleted=False)
+                .filter(
+                    report_id=filters["report_id"],
+                    isDeleted=False,
+                    entity__isDeleted=False,
+                    report__isDeleted=False,
+                )
+                .values_list("entity_id", flat=True)
+            )
+            filtered_ents = filtered_ents.filter(entityID__in=report_entity_ids)
+            filtering = True
+
+        if filters["creation_date_start"] is not None:
+            report_entity_ids = (
+                EntityIntelligenceReport.objects
+                .filter(
+                    report__createdAt__date__gte=filters["creation_date_start"].date(),
+                    isDeleted=False,
+                    entity__isDeleted=False,
+                    report__isDeleted=False,
+                )
+                .values_list("entity_id", flat=True)
+            )
+            filtered_ents = filtered_ents.filter(entityID__in=report_entity_ids)
+            filtering = True
+
+        if filters["creation_date_end"] is not None:
+            report_entity_ids = (
+                EntityIntelligenceReport.objects
+                .filter(
+                    report__createdAt__date__lte=filters["creation_date_end"].date(),
+                    isDeleted=False,
+                    entity__isDeleted=False,
+                    report__isDeleted=False,
+                )
                 .values_list("entity_id", flat=True)
             )
             filtered_ents = filtered_ents.filter(entityID__in=report_entity_ids)
             filtering = True
 
     if filtering:
-        data = add_data(filtered_ents, True, links, data)
+        data = add_data(
+            ents=filtered_ents,
+            show_unlinked_nodes=True,
+            links=links,
+            data=data
+        )
     else:
-        data = add_data(ents=ents, show_unlinked_nodes=False, links=links, data=data)
+        data = add_data(
+            ents=ents,
+            show_unlinked_nodes=False,
+            links=links,
+            data=data
+        )
 
-
-    context = {'unlinked':[],
-               'linked':[],
-               "cur_url": reverse('data_visualisation:graph'),
-               "form":filters}
     context = add_context(filtered_ents if filtering else ents, filtering, context)
 
     with open(json_path, "w") as f:
@@ -79,7 +117,6 @@ def add_context(ents, filtering, context):
     return context
 
 def add_data(ents, show_unlinked_nodes, links, data):
-    # How many times each entity is mentioned across all reports (non-deleted)
     mention_counts_qs = (
         EntityIntelligenceReport.objects
         .filter(entity__in=ents, isDeleted=False, entity__isDeleted=False)
@@ -107,25 +144,29 @@ def add_data(ents, show_unlinked_nodes, links, data):
                     "importance": importance,
                 }
             )
-        
+
     return data
-
+    
 def walk_tree(ent_id):
-    nodes = [Entity.objects.get(entityID = ent_id)]
-    discovered_nodes = {Entity.objects.get(entityID = ent_id).entityID}
+    start_node = Entity.objects.get(entityID=ent_id)
+    nodes = [start_node]
+    discovered_nodes = {start_node.entityID}
 
-    while len(nodes) > 0:
+    while nodes:
         node = nodes.pop()
-        for ent in EntityLink.objects.filter(entity1 = node.entityID).union(EntityLink.objects.filter(entity2 = node.entityID)):
-            if ent.entity1.entityID not in discovered_nodes:
-                discovered_nodes.add(ent.entity1.entityID)
-                nodes.append(ent.entity1)
-            elif ent.entity2.entityID not in discovered_nodes:
-                discovered_nodes.add(ent.entity2.entityID)
-                nodes.append(ent.entity2)
+
+        linked_edges = EntityLink.objects.filter(entity1=node) | EntityLink.objects.filter(entity2=node)
+
+        for link in linked_edges:
+            if link.entity1.entityID not in discovered_nodes:
+                discovered_nodes.add(link.entity1.entityID)
+                nodes.append(link.entity1)
+
+            if link.entity2.entityID not in discovered_nodes:
+                discovered_nodes.add(link.entity2.entityID)
+                nodes.append(link.entity2)
 
     return discovered_nodes
-            
 
 def entity_details(request, ent_id):
     entity = Entity.objects.get(entityID=ent_id)
