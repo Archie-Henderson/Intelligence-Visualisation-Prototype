@@ -63,7 +63,46 @@ def upload(request):
     )
 
     # run spaCy and store extracted entities/links
-    extract_and_store_spacy_for_report(report.reportID)
+    result = extract_and_store_spacy_for_report(report.reportID)
+
+    # Build a simple AI-style summary that highlights the key
+    # Entities detected for this report, store it in intelligenceSource.
+    linked_entities = (
+        EntityIntelligenceReport.objects
+        .select_related("entity")
+        .filter(report=report, isDeleted=False, entity__isDeleted=False)
+    )
+
+    people = sorted({link.entity.name for link in linked_entities if link.entity.type == Entity.PEOPLE})
+    vehicles = sorted({link.entity.name for link in linked_entities if link.entity.type == Entity.VEHICLE})
+    telecom = sorted({link.entity.name for link in linked_entities if link.entity.type == Entity.TELECOM})
+    locations = sorted({link.entity.name for link in linked_entities if link.entity.type == Entity.LOCATION})
+
+    summary_lines = []
+    summary_lines.append("AI-generated summary of uploaded intelligence report.")
+    counts = result.get("entity_counts", {})
+    summary_lines.append(
+        f"Detected entities - People: {counts.get('people', 0)}, "
+        f"Vehicles: {counts.get('vehicle', 0)}, "
+        f"Telecom: {counts.get('telecom', 0)}, "
+        f"Locations: {counts.get('location', 0)}."
+    )
+
+    if people:
+        summary_lines.append("People entities: " + ", ".join(people))
+    if vehicles:
+        summary_lines.append("Vehicle entities: " + ", ".join(vehicles))
+    if telecom:
+        summary_lines.append("Telecom entities: " + ", ".join(telecom))
+    if locations:
+        summary_lines.append("Location entities: " + ", ".join(locations))
+
+    rule_events_found = result.get("rule_events_found", 0)
+    if rule_events_found:
+        summary_lines.append(f"Detected {rule_events_found} potential event(s) in the narrative.")
+
+    report.intelligenceSource = "\n".join(summary_lines)
+    report.save(update_fields=["intelligenceSource"])
 
     return redirect(reverse("data_processing:workspace", args=[report.reportID]))
 def register(request):

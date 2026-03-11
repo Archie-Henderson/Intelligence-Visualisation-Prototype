@@ -15,6 +15,7 @@ from data_processing.models import (
     Entity,
     EntityIntelligenceReport,
 )
+from data_processing.services.relationLevelCalculator import relationLevelCalculator
 
 # -----------------------------
 # 1) EVENT TRIGGERS (rule-based)
@@ -401,8 +402,11 @@ def extract_and_store_spacy_for_report(report_id: int) -> Dict[str, Any]:
         _link_entity_to_report(e, report)
         created_counts["location"] += 1
 
-    # 2) Optionally: extract rule-events (not stored in DB yet)
+    # extract rule-events (not stored in DB yet)
     rule_events = extract_events(text, nlp)
+
+    # Update global entity-to-entity relation graph so the visualisation reflects entities from this and all reports.
+    relationLevelCalculator()
 
     return {
         "report_id": report.pk,
