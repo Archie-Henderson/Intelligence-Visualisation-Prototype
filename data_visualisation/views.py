@@ -83,7 +83,7 @@ def add_context(ents, filtering, context):
 
 def add_data(ents, show_unlinked_nodes, links, data):
     for ent in ents:
-        if show_unlinked_nodes or EntityLink.objects.filter(entity_1 = ent).count() +  EntityLink.objects.filter(entity_2 = ent).count() > 0:
+        if show_unlinked_nodes or EntityLink.objects.filter(entity1 = ent).count() +  EntityLink.objects.filter(entity2 = ent).count() > 0:
             data['nodes'].append({'id':ent.entityID, 'name':ent.name})
 
     for link in links:
