@@ -9,18 +9,20 @@ import os
 import json
 
 # Create your views here.
-def graph_view(request):
-    filter_form = FiltersForm()
+def graph_view(request, node_id = None):
+    filters = {'node_id':None,
+                   'entity_type':"",
+                   'entity_name':"",
+                   'creation_data_end':None,
+                   'creation_date_start':None,
+                   'report_id':None,
+                   'form_behaviour':False}
 
     ents = Entity.objects.all()
     filtered_ents = Entity.objects.all()
     links = EntityLink.objects.all()
     filter_data = False
     filtering = False
-    context = {'unlinked':[],
-               'linked':[],
-               "cur_url": reverse('data_visualisation:graph'),
-               "form":filter_form}
     
     json_path = os.path.abspath("./static/graph_data.json")
 
@@ -32,6 +34,7 @@ def graph_view(request):
 
         if filter_form.is_valid():
             filters = filter_form.cleaned_data
+            print(filters['form_behaviour'])
 
             if filters['node_id'] != None:
                 filtered_ents = filtered_ents.filter(entityID__in = walk_tree(filters['node_id']))
@@ -53,12 +56,18 @@ def graph_view(request):
                 filtering = True
             if filters['form_behaviour']:
                 filter_data = True
+                print("Filtering graph")
 
     if filter_data:
-        data = add_data(filtered_ents, True, links, data)
+        data = add_data(ents=filtered_ents, show_unlinked_nodes=True, links=links, data=data)
     else:
-        data = add_data(ents, False, links, data)
+        data = add_data(ents=ents, show_unlinked_nodes=False, links=links, data=data)
 
+
+    context = {'unlinked':[],
+               'linked':[],
+               "cur_url": reverse('data_visualisation:graph'),
+               "form":filters}
     context = add_context(filtered_ents, filtering, context)
 
     with open(json_path, "w") as f:
@@ -74,9 +83,9 @@ def add_context(ents, filtering, context):
                 context['linked'].append({'id':ent.entityID, 'name':ent.name})
     return context
 
-def add_data(ents, filtering, links, data):
+def add_data(ents, show_unlinked_nodes, links, data):
     for ent in ents:
-        if filtering or EntityLink.objects.filter(entity1 = ent).count() +  EntityLink.objects.filter(entity2 = ent).count() > 0:
+        if show_unlinked_nodes or EntityLink.objects.filter(entity_1 = ent).count() +  EntityLink.objects.filter(entity_2 = ent).count() > 0:
             data['nodes'].append({'id':ent.entityID, 'name':ent.name})
 
     for link in links:
