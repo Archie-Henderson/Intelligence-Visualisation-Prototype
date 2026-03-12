@@ -15,8 +15,11 @@ from django.utils import timezone
 import os
 from openai import OpenAI
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-
+def get_openai_client():
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        return None
+    return OpenAI(api_key=api_key)
 INTELLIGENCE_SUMMARY_INSTRUCTIONS = """
 Rewrite the uploaded text into formal UK police intelligence-style narrative.
 
@@ -35,6 +38,10 @@ Requirements:
 """
 
 def generate_intelligence_summary(text: str) -> str:
+    client = get_openai_client()
+    if client is None:
+        return text
+
     prompt = f"{INTELLIGENCE_SUMMARY_INSTRUCTIONS}\n\nTEXT:\n{text}"
 
     resp = client.responses.create(
