@@ -200,9 +200,32 @@ def entity_details(request, ent_id):
             }
         )
 
+    connected_entities = []
+
+    links_from = EntityLink.objects.filter(entity1=entity).select_related("entity2", "reportLink")
+    for link in links_from:
+        if not link.entity2.isDeleted:
+            connected_entities.append(
+                {
+                    "entity": link.entity2,
+                    "report": link.reportLink,
+                }
+            )
+
+    links_to = EntityLink.objects.filter(entity2=entity).select_related("entity1", "reportLink")
+    for link in links_to:
+        if not link.entity1.isDeleted:
+            connected_entities.append(
+                {
+                    "entity": link.entity1,
+                    "report": link.reportLink,
+                }
+            )
+
     context = {
         "entity": entity,
         "report_links": report_links,
+        "connected_entities": connected_entities,
     }
     return render(request, "data_visualisation/entity_details.html", context=context)
 

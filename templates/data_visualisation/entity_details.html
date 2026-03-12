@@ -38,6 +38,34 @@
         <p><strong>Entity Updated At:</strong> {{ entity.updatedAt }}</p>
     </div>
 
+    <h3>Connected Entities</h3>
+
+    {% if connected_entities %}
+        <div style="
+            background: white;
+            padding: 18px 20px;
+            margin-bottom: 18px;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        ">
+            <ul style="margin: 0 0 0 20px;">
+                {% for item in connected_entities %}
+                    <li>
+                        <a href="{% url 'data_visualisation:ent_details' item.entity.entityID %}"
+                           style="text-decoration:none; color:#007bff;">
+                            {{ item.entity.name }}
+                        </a>
+                        {% if item.report %}
+                            connected through report {{ item.report.reportID }}
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        <p>No directly connected entities found.</p>
+    {% endif %}
+
     <h3>Reports mentioning {{ entity.name }}</h3>
 
     {% if report_links %}
