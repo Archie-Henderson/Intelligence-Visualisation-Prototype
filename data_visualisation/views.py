@@ -33,7 +33,7 @@ def graph_view(request):
         filters = filter_form.cleaned_data
 
         if filters["node_id"] is not None:
-            filtered_ents = filtered_ents.filter(entityID=filters["node_id"])
+            filtered_ents = filtered_ents.filter(entityID__in=walk_tree(filters["node_id"]))
             filtering = True
 
         if filters["entity_type"]:
