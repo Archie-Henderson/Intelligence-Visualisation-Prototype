@@ -14,9 +14,9 @@ def graph_view(request):
     form_data = request.POST if request.method == "POST" else request.GET
     filter_form = FiltersForm(form_data or None)
 
-    ents = Entity.objects.all()
-    filtered_ents = Entity.objects.all()
-    links = EntityLink.objects.all()
+    ents = Entity.objects.filter(isDeleted = False)
+    filtered_ents = Entity.objects.filter(isDeleted = False)
+    links = EntityLink.objects.filter(entity1__isDeleted = False, entity2__isDeleted = False)
     filtering = False
 
     context = {
@@ -126,7 +126,7 @@ def add_data(ents, show_unlinked_nodes, links, data):
     mention_counts = {row["entity_id"]: row["count"] for row in mention_counts_qs}
 
     for ent in ents:
-        if show_unlinked_nodes or EntityLink.objects.filter(entity1=ent).count() + EntityLink.objects.filter(entity2=ent).count() > 0:
+        if show_unlinked_nodes or EntityLink.objects.filter(entity1=ent, entity1__isDeleted = False).count() + EntityLink.objects.filter(entity2=ent, entity2__isDeleted = False).count() > 0:
             freq = mention_counts.get(ent.entityID, 0)
             data["nodes"].append({"id": ent.entityID, "name": ent.name, "freq": freq})
 
